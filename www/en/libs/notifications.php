@@ -22,15 +22,28 @@ function notifications_send($params){
 //        log_file(isset_get($params['message']), 'notifications', 'warning');
 
         if(is_object($params) and ($params instanceof Exception)){
-            /*
-             * Notify about an exception
-             */
-            $params  = array('title'       => ($params->isWarning() ? tr('Warning') : tr('Exception')),
-                             'exception'   => true,
-                             'description' => $params,
-                             'class'       => 'exception');
+            if(is_object($params) and ($params instanceof bException)){
+                /*
+                 * Notify about a bException
+                 */
+                $params  = array('title'       => ($params->isWarning() ? tr('Warning') : tr('Exception')),
+                                 'exception'   => true,
+                                 'description' => $params,
+                                 'class'       => 'exception');
 
-            log_file($params['description'], 'notification-'.strtolower($params['title']));
+                log_file($params['description'], 'notification-'.strtolower($params['title']));
+
+            }else{
+                /*
+                 * Notify about an exception
+                 */
+                $params  = array('title'       => tr('Exception'),
+                                 'exception'   => true,
+                                 'description' => $params,
+                                 'class'       => 'exception');
+
+                log_file($params['description'], 'notification-'.strtolower($params['title']));
+            }
 
         }else{
             array_params($params, 'title');
@@ -211,7 +224,7 @@ return false;
         if(SCRIPT != 'init'){
             if(empty($_CONFIG['mail']['developer'])){
                 log_console('[notifications_send() FAILED : '.strtoupper($_SESSION['domain']).' / '.strtoupper(php_uname('n')).' / '.strtoupper(ENVIRONMENT).']');
-                log_console("notifications_send() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification event was:\nEvent: \"".cfm($event)."\"\nMessage: \"".cfm($message)."\"");
+                log_console(tr("notifications_send() failed with: ".implode("\n", $e->getMessages())."\n\nOriginal notification $params was: \":params\"", array(':params' => $params)));
                 log_console('WARNING! $_CONFIG[mail][developer] IS NOT SET, NOTIFICATIONS CANNOT BE SENT!');
 
             }else{
