@@ -53,7 +53,7 @@ function linux_library_init(){
 function linux_get_ssh_tcp_forwarding($server){
     try{
         $server   = servers_get($server);
-        $commands = 'sudo sshd -T 2> /dev/null | grep allowtcpforwarding';
+        $commands = 'sshd -T 2> /dev/null | grep -i allowtcpforwarding';
         $results  = servers_exec($server, $commands);
         $result   = array_shift($results);
         $result   = strtolower(trim($result));
