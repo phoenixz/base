@@ -102,7 +102,15 @@ function email_servers_validate($email_server){
 
         $v->isValid();
 
-        $email_server['seohostname'] = seo_unique($email_server['seohostname'], 'email_servers', $email_server['id'], 'seohostname');
+        $exists = sql_get('SELECT `id` FROM `email_servers` WHERE `hostname` = :hostname LIMIT 1', true, array(':hostname' => $email_server['hostname']));
+
+        if($exists){
+            $v->setError(tr('The hostname ":hostname" is already registered'. array(':hostname' => $email_server['hostname'])));
+        }
+
+        $email_server['seohostname'] = seo_unique($email_server['hostname'], 'email_servers', $email_server['id'], 'seohostname');
+
+        $v->isValid();
 
         return $email_server;
 
