@@ -42,11 +42,11 @@ try{
                 $registered = ssh_is_registered($server['hostname'], $server['port']);
 
                 if($registered === false){
-                    throw new bException(tr('sql_connect(): Connection refused for host ":hostname::port" because the tunnel process was canceled due to missing server fingerprints in the ROOT/data/ssh/known_hosts file and `ssh_fingerprints` table. Please register the server first', array(':hostname' => $connector['host'], ':port' => $connector['port'])), $e);
+                    throw new bException(tr('sql_connect(): Connection refused for host ":hostname" because the tunnel process was canceled due to missing server fingerprints in the ROOT/data/ssh/known_hosts file and `ssh_fingerprints` table. Please register the server first', array(':hostname' => $connector['ssh_tunnel']['hostname'])), $e);
                 }
 
                 if($registered === true){
-                    throw new bException(tr('sql_connect(): Connection refused for host ":hostname::port" because the tunnel process either started too late or already died. The server has its SSH fingerprints registered in the ROOT/data/ssh/known_hosts file.', array(':hostname' => $connector['host'], ':port' => $connector['port'])), $e);
+                    throw new bException(tr('sql_connect(): Connection refused for host ":hostname" on local port ":port" because the tunnel process either started too late or already died. The server has its SSH fingerprints registered in the ROOT/data/ssh/known_hosts file.', array(':hostname' => $connector['ssh_tunnel']['hostname'], ':port' => $connector['port'])), $e);
                 }
 
                 /*
