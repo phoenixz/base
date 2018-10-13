@@ -322,9 +322,9 @@ function file_create_target_path($path, $singledir = false, $length = false){
 /*
  * Ensure that the specified file exists in the specified path
  */
-function file_ensure_file($file, $mode = null){
+function file_ensure_file($file, $mode = null, $path_mode = null){
     try{
-        file_ensure_path(dirname($file));
+        file_ensure_path(dirname($file), $path_mode);
 
         if(!file_exists($file)){
             /*
