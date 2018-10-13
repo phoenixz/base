@@ -150,11 +150,12 @@ if(empty($commands)){
 }
 
 try{
-    $server = array('hostname'         => '*'.$hostname,
-                    'force_terminal'   => isset_get($force_terminal),
-                    'disable_terminal' => isset_get($disable_terminal),
-                    'commands'         => $commands,
-                    'identity_file'    => $identity_file);
+    $hostname = servers_like($hostname);
+    $server   = array('hostname'         => $hostname,
+                      'force_terminal'   => isset_get($force_terminal),
+                      'disable_terminal' => isset_get($disable_terminal),
+                      'commands'         => $commands,
+                      'identity_file'    => $identity_file);
 
     $result = servers_exec($server, $commands, $background, $function);
 
