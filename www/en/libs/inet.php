@@ -520,4 +520,159 @@ function inet_get_client_data(){
         throw new bException('inet_get_client_data(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Returns the specified port if it is valid, else it causes an exception. By default, system ports (< 1024)) are NOT valid
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package inet
+ * @exception bException If the specified port is not valid
+ *
+ * @param natural $port
+ * @return The specified port, if valid
+ */
+function inet_validate_port($port, $lowest = 1025){
+    try{
+        if(!is_natural($port, $lowest) or ($port > 65535)){
+            throw new bException(tr('inet_validate_port(): Specified port ":port" is invalid', array(':port' => $port)), 'validation');
+        }
+
+        return $port;
+
+    }catch(Exception $e){
+        throw new bException('inet_validate_port(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns the specified IP if it is valid, else it causes an exception. By default, empty values are allowed
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package inet
+ * @exception bException If the specified ip is not valid
+ *
+ * @param natural $ip
+ * @param boolean $allow_empty
+ * @return The specified ip, if valid
+ */
+function inet_validate_ip($ip, $allow_all = true){
+    try{
+        if(!$ip){
+            throw new bException(tr('inet_validate_ip(): No ip specified'), 'validation');
+        }
+
+        if(($ip === '0.0.0.0') and !$allow_all){
+            throw new bException(tr('inet_validate_ip(): IP "0.0.0.0" is not allowed'), 'validation');
+        }
+
+        if(!filter_var($ip, FILTER_VALIDATE_IP)){
+            throw new bException(tr('inet_validate_ip(): Specified ip ":ip" is invalid', array(':ip' => $ip)), 'validation');
+        }
+
+        return $ip;
+
+    }catch(Exception $e){
+        throw new bException('inet_validate_ip(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns true if the specified port is available, false otherwise
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package inet
+ * @see inet_validate_port()
+ *
+ * @param natural $port
+ * @return
+ */
+function inet_port_available($port, $ip = '0.0.0.0'){
+    try{
+        $ip   = inet_validate_ip($ip);
+        $port = inet_validate_port($port);
+
+        if($ip){
+            $results = safe_exec('sudo netstat -peanut | grep '.$ip.':'.$port, '0,1');
+
+        }else{
+            $results = safe_exec('sudo netstat -peanut | grep :'.$port, '0,1');
+        }
+
+        foreach($results as $result){
+            $result = substr($result, 21);
+            $result = str_until($result, ' ');
+
+            $found_ip   = str_until($result, ':');
+            $found_port = str_from($result , ':');
+
+            if($found_port == $port){
+                if(!$ip or ($ip == $found_ip) or ($found_ip == '0.0.0.0')){
+                    /*
+                     * The port / IP or the port globally is already being listened on
+                     */
+                    return false;
+                }
+            }
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('inet_port_available(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns a random available port on the specified IP that can be listened on. If $ip is not specified, 0.0.0.0 (listen on all IPs) will be assumed
+ *
+ * The lowest port, by default, will be above the system ports (> 1024)
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package inet
+ * @exception bException if no available port could be found in $retries amount of retries
+ * @see inet_port_available()
+ *
+ * @param string $ip
+ * @return available port on the specified IP that is not being listened on yet
+ */
+function inet_get_available_port($ip = '0.0.0.0', $lowest = 1025, $retries = 10){
+    try{
+        $count = 1;
+
+        while($port = rand($lowest, 65535)){
+            if(++$count > $retries){
+                throw new bException(tr('inet_get_available_port(): Failed to find an available port in ":retries" retries', array(':retries' => $retries)), 'failed');
+            }
+
+            if(inet_port_available($port)){
+                return $port;
+            }
+        }
+
+        return $port;
+
+    }catch(Exception $e){
+        throw new bException('inet_get_available_port(): Failed', $e);
+    }
+}
 ?>
