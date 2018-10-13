@@ -182,7 +182,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
                                      * table? If so, we can rebuild the
                                      * known_hosts file
                                      */
-                                    $exists = sql_get('SELECT `id` FROM `ssh_fingerprints` WHERE `hostname` = :hostname AND `port` = :port', true, array(':hostname' => $server['hostname'], ':port' => $server['port']));
+                                    $exists = sql_get('SELECT `id` FROM `ssh_fingerprints` WHERE `hostname` = :hostname AND `port` = :port LIMIT 1', true, array(':hostname' => $server['hostname'], ':port' => $server['port']));
 
                                     if($exists){
                                         /*
@@ -190,7 +190,7 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
                                          * in ssh_fingerprints. Rebuild the
                                          * known_hosts file, and retry command
                                          */
-                                        log_console(tr('The host ":hostname" has no SSH key fingerprint in the known_hosts file, but the keys were found in the ssh_fingerprints table, retrying execution', array(':hostname' => $server['hostname'])), 'yellow');
+                                        log_console(tr('The host ":hostname" has no SSH key fingerprint in the known_hosts file, but the keys were found in the ssh_fingerprints table. Rebuilding known_hosts file and retrying execution', array(':hostname' => $server['hostname'])), 'yellow');
                                         ssh_rebuild_known_hosts();
                                         return ssh_exec($server, $commands, $background, $function, $ok_exitcodes);
                                     }
@@ -850,7 +850,7 @@ function ssh_get_account($accounts_id){
 
 
 /*
- * Add the fingerprints for the specified hostname:port to the ROOT/data/ssh/known_hosts
+ * Add the fingerprints for the specified hostname:port to the `ssh_fingerprints` table and the ROOT/data/ssh/known_hosts file
  *
  * @Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -858,15 +858,14 @@ function ssh_get_account($accounts_id){
  * @category Function reference
  * @package ssh
  * @see ssh_rebuild_known_hosts()
+ * @see ssh_remove_known_hosts()
  *
  * @param string $hostname
  * @param natural $port
  */
 function ssh_add_known_host($hostname, $port){
     try{
-        file_ensure_path(ROOT.'data/ssh/keys/', 0750);
-        file_ensure_file(ROOT.'data/ssh/known_hosts', 0640);
-
+        $port   = ssh_get_port($port);
         $retval = ssh_get_fingerprints($hostname, $port);
         $count  = 0;
 
@@ -898,11 +897,11 @@ function ssh_add_known_host($hostname, $port){
                 $exists = array_key_exists($fingerprint['fingerprint'], $fingerprints);
 
                 if(!$exists){
-                    throw new bException(tr('ssh_get_fingerprints(): The hostname ":hostname" gave fingerprint ":fingerprint", which does not match any of the already registered fingerprints', array(':hostname' => $fingerprint['hostname'], ':fingerprint' => $fingerprint['fingerprint'])), 'not-exist');
+                    throw new bException(tr('ssh_add_known_host(): The hostname ":hostname" gave fingerprint ":fingerprint", which does not match any of the already registered fingerprints', array(':hostname' => $fingerprint['hostname'], ':fingerprint' => $fingerprint['fingerprint'])), 'not-exist');
                 }
 
                 if($fingerprints[$fingerprint['fingerprint']] != $fingerprint['algorithm']){
-                    throw new bException(tr('ssh_get_fingerprints(): The hostname ":hostname" gave fingerprint ":fingerprint", which does match an already registered fingerprints, but for the wrong algorithm ":algorithm"', array(':hostname' => $fingerprint['hostname'], ':fingerprint' => $fingerprint['fingerprint'], ':algorithm' => $fingerprint['algorithm'])), 'not-match');
+                    throw new bException(tr('ssh_add_known_host(): The hostname ":hostname" gave fingerprint ":fingerprint", which does match an already registered fingerprints, but for the wrong algorithm ":algorithm"', array(':hostname' => $fingerprint['hostname'], ':fingerprint' => $fingerprint['fingerprint'], ':algorithm' => $fingerprint['algorithm'])), 'not-match');
                 }
             }
 
@@ -954,6 +953,76 @@ function ssh_add_known_host($hostname, $port){
 
 
 /*
+ * Remove the registered fingerprints for the specified hostname:port from the `ssh_fingerprints` table and the ROOT/data/ssh/known_hosts file
+ *
+ * @Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ * @see ssh_rebuild_known_hosts()
+ * @see ssh_add_known_hosts()
+ *
+ * @param string $hostname
+ * @param natural $port
+ * @return natural The amount of fingerprints removed
+ */
+function ssh_remove_known_host($hostname, $port){
+    try{
+        if(empty($hostname)){
+            throw new bException(tr('ssh_remove_known_host(): No hostname specified'), 'not-specified');
+        }
+
+        $count = 0;
+        $port  = ssh_get_port($port);
+
+        sql_query('DELETE FROM `ssh_fingerprints` WHERE `hostname` = :hostname AND `port` = :port', array(':hostname' => $hostname, ':port' => $port));
+
+        file_ensure_path(ROOT.'data/ssh/keys/', 0750);
+        file_ensure_file(ROOT.'data/ssh/known_hosts', 0640);
+        file_delete(ROOT.'data/ssh/known_hosts~update');
+
+        $f1 = fopen(ROOT.'data/ssh/known_hosts'       , 'r');
+        $f2 = fopen(ROOT.'data/ssh/known_hosts~update', 'w+');
+
+        while($line = fgets($f1)){
+            $found = preg_match('/^\['.$hostname.'\]\:'.$port.'\s+/', $line);
+
+            if(!$found){
+                fputs($f2, $line);
+
+            }else{
+                $count++;
+            }
+        }
+
+        fclose($f1);
+        fclose($f2);
+
+        file_delete(ROOT.'data/ssh/known_hosts');
+        rename(ROOT.'data/ssh/known_hosts~update', ROOT.'data/ssh/known_hosts');
+
+        return $count;
+
+    }catch(Exception $e){
+        /*
+         * Close the files
+         */
+        if(isset($f1)){
+            fclose($f1);
+        }
+
+        if(isset($f2)){
+            fclose($f2);
+        }
+
+        throw new bException('ssh_remove_known_host(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Append the specified fingerprint data to the ROOT/data/ssh/known_hosts file
  *
  * @Sven Olaf Oostenbrink <sven@capmega.com>
@@ -973,14 +1042,18 @@ function ssh_add_known_host($hostname, $port){
  */
 function ssh_append_fingerprint($fingerprint){
     try{
-        $exists = safe_exec('grep "'.$fingerprint['fingerprint'].'" '.ROOT.'data/ssh/known_hosts', '0,1');
+        file_ensure_path(ROOT.'data/ssh/keys/'      , 0750);
+        file_ensure_file(ROOT.'data/ssh/known_hosts', 0640);
+
+
+        $exists = safe_exec('grep "\['.$fingerprint['hostname'].'\]:'.$fingerprint['port'].' '.$fingerprint['algorithm'].' '.$fingerprint['fingerprint'].'" '.ROOT.'data/ssh/known_hosts', '0,1');
 
         if($exists){
-            log_console(tr('Skipping fingerprint ":fingerprint" for hostname ":hostname", it already exists in known_hosts', array(':fingerprint' => $fingerprint['fingerprint'], ':hostname' => $hostname)), 'VERYVERBOSE');
+            log_console(tr('Skipping fingerprint ":fingerprint" for hostname ":hostname", it already exists in known_hosts', array(':fingerprint' => $fingerprint['fingerprint'], ':hostname' => $fingerprint['hostname'])), 'VERYVERBOSE');
             return false;
         }
 
-        log_console(tr('Adding fingerprint ":fingerprint" for hostname ":hostname" to known_hosts', array(':fingerprint' => $fingerprint['fingerprint'], ':hostname' => $hostname)), 'VERBOSE');
+        log_console(tr('Adding fingerprint ":fingerprint" for hostname ":hostname" to known_hosts', array(':fingerprint' => $fingerprint['fingerprint'], ':hostname' => $fingerprint['hostname'])), 'VERBOSE');
         file_put_contents(ROOT.'data/ssh/known_hosts', '['.$fingerprint['hostname'].']:'.$fingerprint['port'].' '.$fingerprint['algorithm'].' '.$fingerprint['fingerprint']."\n", FILE_APPEND);
         return true;
 
@@ -1014,16 +1087,9 @@ function ssh_get_fingerprints($hostname, $port){
             throw new bException(tr('ssh_get_fingerprints(): No hostname specified'), 'not-specified');
         }
 
-        if(empty($port)){
-            throw new bException(tr('ssh_get_fingerprints(): No port specified'), 'not-specified');
-        }
-
-        if(!is_natural($port) or ($port > 65535)){
-            throw new bException(tr('ssh_get_fingerprints(): No port specified'), 'not-specified');
-        }
-
         load_libs('servers,seo');
 
+        $port    = ssh_get_port($port);
         $retval  = array();
         $results = safe_exec('ssh-keyscan -p '.$port.' '.$hostname);
 
@@ -1083,7 +1149,7 @@ function ssh_rebuild_known_hosts($clear = false){
         }
 
         $count        = 0;
-        $fingerprints = sql_query('SELECT `id`, `hostname`. `port`, `algorithm`, `fingerprint` FROM `ssh_fingerprints` WHERE `status` IS NULL');
+        $fingerprints = sql_query('SELECT `id`, `hostname`, `port`, `algorithm`, `fingerprint` FROM `ssh_fingerprints` WHERE `status` IS NULL');
 
         while($fingerprint = sql_fetch($fingerprints)){
             if(ssh_append_fingerprint($fingerprint)){
@@ -1475,6 +1541,39 @@ function ssh_close_tunnel($pid){
 
     }catch(Exception $e){
         throw new bException('ssh_close_tunnel(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return either the specified port (if any) or the dedfault SSH port (if null or equivalent of empty was specified)
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param natural $port
+ * @return natural If the specified port was not empty, it will be returned. If the specified port was empty, the default port configuration will be returned
+ */
+function ssh_get_port($port){
+    global $_CONFIG;
+
+    try{
+        if($port){
+            if(!is_natural($port) or ($port > 65535)){
+              throw new bException(tr('ssh_get_port(): No port specified'), 'not-specified');
+          }
+
+          return $port;
+        }
+
+        return $_CONFIG['servers']['ssh']['default_port'];
+
+    }catch(Exception $e){
+        throw new bException('ssh_get_port(): Failed', $e);
     }
 }
 ?>
