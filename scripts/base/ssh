@@ -4,6 +4,9 @@
  *
  */
 $usage = './scripts/base/ssh
+./scripts/base/ssh register HOSTNAME [SSH-PORT]
+./scripts/base/ssh unregister HOSTNAME [SSH-PORT]
+./scripts/base/ssh rebuild [--force]
 ./scripts/base/ssh HOSTNAME [ARGUMENTS] [COMMANDS]';
 
 $help  = 'This script allows to manage SSH connections to registered servers
@@ -33,47 +36,96 @@ ARGUMENTS
 -b,--background                 - Execute in background. This will execute the
                                   entire command in the background and return
                                   the command prompt. NOTE: This option will not
-                                  generate any output on the command line';
+                                  generate any output on the command line
+
+
+METHODS
+
+register HOSTNAME [SSH-PORT]    - Register the fingerprint for the specified
+                                  hostname and port in the ssh_fingerprints
+                                  table and ROOT/data/ssh/known_hosts file
+
+unregister HOSTNAME [SSH-PORT]  - Register the fingerprint for the specified
+                                  hostname and port in the ssh_fingerprints
+                                  table and ROOT/data/ssh/known_hosts file
+
+rebuild                         - Rebuild the known_host file from the
+                                  `ssh_fingerprints` table by adding all entries
+                                  from the table. It will NOT delete entries
+                                  that are already in the file. If FORCE is
+                                  specified, the file will first be deleted and
+                                  then rebuild with only entries from the table';
 
 require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
 load_libs('servers');
 
-$background    = cli_argument('-b,--background');
-$function      = not_empty(cli_argument('-f,--function'), 'passthru');
-$identity_file = cli_argument('-i,--identity-file');
-
 switch(cli_method()){
     case 'register':
         $hostname = cli_argument(1);
+        $port     = cli_argument(2);
         cli_no_arguments_left();
 
-        cli_no_arguments_left();
-        $count = servers_register_host(array('hostname'      => $hostname,
-                                             'identity_file' => $identity_file));
+        $count = ssh_add_known_host($hostname, $port);
 
         if($count){
-            log_console(tr('Added ":count" hashed hostnames', array(':count' => $count)), 'green');
+            log_console(tr('Added ":count" hostnames', array(':count' => $count)), 'green');
 
         }else{
-            log_console(tr('Added no hashed hostnames, hostname was probably already registered'), 'yellow');
+            log_console(tr('Added no hostnames, hostname was probably already registered'), 'yellow');
         }
 
         break;
 
-    case 'list':
-        script_exec('base/servers');
+    case 'unregister':
+        $hostname = cli_argument(1);
+        $port     = cli_argument(2);
+        cli_no_arguments_left();
+
+        $count = ssh_remove_known_host($hostname, $port);
+
+        if($count){
+            log_console(tr('Removed ":count" hostnames', array(':count' => $count)), 'green');
+
+        }else{
+            log_console(tr('Removed no hostnames, hostname was probably not registered'), 'yellow');
+        }
+
+        break;
+
+    case 'rebuild':
+        cli_no_arguments_left();
+
+        $count = ssh_rebuild_known_hosts(FORCE);
+
+        if($count){
+            log_console(tr('Added ":count" hostnames', array(':count' => $count)), 'green');
+
+        }else{
+            log_console(tr('Added no hostnames, known_hosts file probably contains all hostnames from the `ssh_fingerprints` table'), 'yellow');
+        }
+
         break;
 
     case '':
         throw new bException(tr('No method specified'), 'no-method');
 
     default:
-        $hostname = cli_method();
-        $commands = cli_argument(1);
+        $background    = cli_argument('-b,--background');
+        $function      = not_empty(cli_argument('-f,--function'), 'passthru');
+        $identity_file = cli_argument('-i,--identity-file');
+        $hostname      = cli_method();
+        $port          = cli_method(1);
+        $commands      = cli_argument(1);
 
         if(empty($hostname)){
             throw new bException(tr('No hostname specified'), 'warning/not-specified');
+        }
+
+        if(!empty($port)){
+            if(!is_natural($port) or ($port > 65535)){
+                throw new bException(tr('Invalid port ":port" specified', array(':port' => $port)), 'warning/invalid');
+            }
         }
 
         if(empty($commands)){

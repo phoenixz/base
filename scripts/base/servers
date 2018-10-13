@@ -45,15 +45,22 @@ test TEST SERVER                - Execute the specified TEST on the specified
 
 add HOSTNAME [SSH-PORT]         - Add specified hostname to the database
 
+update HOSTNAME                 - Update specified hostname in the database
+
+delete ID | HOSTNAME            - Set the status of the specified hostname to
+                                  "deleted" and remove the SSH fingerprints from
+                                  both ssh_fingerprints and the
+                                  ROOT/data/ssh/known_hosts file
+
+erase ID | HOSTNAME             - Erase the specified host from the database
+
 register HOSTNAME [SSH-PORT]    - Add the fingerprints for the specified
                                   hostname / port to the ssh_fingerprints table
                                   and the ROOT/data/ssh/known_host file
 
 unregister HOSTNAME [SSH-PORT]  - Remove the registered hostname / port
                                   fingerprints from the ROOT/data/ssh/known_host
-                                  file and the ssh_fingerprints table
-
-update HOSTNAME                 - Update specified hostname in the database';
+                                  file and the ssh_fingerprints table';
 
 require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
@@ -69,6 +76,78 @@ switch(cli_method()){
     case 'update':
         $server['hostname'] = cli_argument(0);
         servers_update($server);
+        break;
+
+    case 'register':
+        $hostname = cli_argument(1);
+        cli_no_arguments_left();
+
+        $count = servers_register_host(array('hostname' => $hostname));
+
+        if($count){
+            log_console(tr('Added ":count" hashed hostnames', array(':count' => $count)), 'green');
+
+        }else{
+            log_console(tr('Added no hashed hostnames, hostname was probably already registered'), 'yellow');
+        }
+
+        break;
+
+    case 'unregister':
+        $hostname = cli_argument(1);
+        cli_no_arguments_left();
+
+        $count = servers_unregister_host(array('hostname'      => $hostname,
+                                               'identity_file' => $identity_file));
+
+        if($count){
+            log_console(tr('Removed ":count" hashed hostnames', array(':count' => $count)), 'green');
+
+        }else{
+            log_console(tr('Removed no hashed hostnames, hostname was probably not registered'), 'yellow');
+        }
+
+        break;
+
+    case 'delete':
+        $status = ensure_variable($status, 'deleted');
+        // FALLTHROUH
+
+    case 'undelete':
+        $status = ensure_variable($status, null);
+        // FALLTHROUH
+
+    case 'status':
+        $hostname = cli_argument(1);
+        $status   = ensure_variable($status, cli_argument(2));
+        cli_no_arguments_left();
+
+        $count = servers_unregister_host(array('hostname'      => $hostname,
+                                               'identity_file' => $identity_file));
+
+        if($count){
+            log_console(tr('Removed ":count" hashed hostnames', array(':count' => $count)), 'green');
+
+        }else{
+            log_console(tr('Removed no hashed hostnames, hostname was probably not registered'), 'yellow');
+        }
+
+        break;
+
+    case 'erase':
+        $hostname = cli_argument(1);
+        cli_no_arguments_left();
+
+        $count = servers_unregister_host(array('hostname'      => $hostname,
+                                               'identity_file' => $identity_file));
+
+        if($count){
+            log_console(tr('Removed ":count" hashed hostnames', array(':count' => $count)), 'green');
+
+        }else{
+            log_console(tr('Removed no hashed hostnames, hostname was probably not registered'), 'yellow');
+        }
+
         break;
 
     case 'list':
@@ -238,7 +317,7 @@ switch(cli_method()){
 
     case 'show':
         $server = cli_argument();
-        $server = servers_like_hostname($server);
+        $server = servers_like($server);
         $server = servers_get($server);
 
         if(empty($server['ssh_accounts_id'])){
@@ -273,7 +352,7 @@ switch(cli_method()){
         $requested = cli_argument(2);
 
         if(!$test){
-            throw new bException(tr('No test specified'), 'warning/not-exist');
+            throw new bException(tr('No test specified. Please specify one of "ssh", "database", or "tunnel-database"'), 'warning/not-exist');
         }
 
         if(!$requested){
@@ -281,7 +360,8 @@ switch(cli_method()){
         }
 
         try{
-            $server = servers_get($requested, true);
+            $requested = servers_like($requested);
+            $server    = servers_get($requested, true);
 
             switch($test){
                 case 'ssh':
@@ -319,7 +399,7 @@ switch(cli_method()){
                     break;
 
                 default:
-                    throw new bException(tr('Unknown test ":test" specified', array(':test' => $test)), 'warning/unknown');
+                    throw new bException(tr('Unknown test ":test" specified. Please specify one of "ssh", "database", or "tunnel-database".', array(':test' => $test)), 'warning/unknown');
             }
 
         }catch(Exception $e){
