@@ -680,6 +680,32 @@ function isset_get(&$variable, $return = null, $alt_return = null){
 
 
 /*
+ * Ensures the specified variable exists. If the variable already exists with a non NULL value, it will not be touched. If the variable does not exist, or has a NULL value, it will be set to the $initialization variable
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param mixed $variable
+ * @param mixed $initialize The value to initialize the variable with
+ * @return mixed the value of the variable. Either the value of the existing variable, or the value of the $initialize variable, if the variable did not exist, or was NULL
+ */
+function ensure_variable(&$variable, $initialize){
+    if(isset($variable)){
+        $variable = $initialize;
+
+    }elseif($variable === null){
+        $variable = $initialize;
+    }
+
+    return $variable;
+}
+
+
+
+/*
  * tr() is a translator marker function. It basic function is to tell the
  * translation system that the text within should be translated.
  *
