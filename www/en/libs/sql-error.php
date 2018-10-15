@@ -41,7 +41,7 @@ function sql_error($e, $query, $execute, $sql = null){
 
         if($execute){
             if(!is_array($execute)){
-                throw new bException('sql_error(): The specified $execute parameter is NOT an array, it is an "'.gettype($execute).'"', $e);
+                throw new bException(tr('sql_error(): The specified $execute parameter is NOT an array, it is an ":type"', array(':type' => gettype($execute))), $e);
             }
 
             foreach($execute as $key => $value){
@@ -49,7 +49,7 @@ function sql_error($e, $query, $execute, $sql = null){
                     /*
                      * This is automatically a problem!
                      */
-                    throw new bException('sql_error(): POSSIBLE ERROR: The specified $execute array contains key "'.str_log($key).'" with non scalar value "'.str_log($value).'"', $e);
+                    throw new bException(tr('sql_error(): POSSIBLE ERROR: The specified $execute array contains key ":key" with non scalar value ":value"', array(':key' => $key, ':value' => $value)), $e);
                 }
             }
         }
@@ -86,10 +86,10 @@ function sql_error($e, $query, $execute, $sql = null){
                 preg_match_all('/:\w+/imus', $query, $matches);
 
                 if(count($matches[0]) != count($execute)){
-                    throw new bException('sql_error(): Query "'.str_log($query, 4096).'" failed with error HY093, the number of query tokens does not match the number of bound variables. The query contains tokens "'.str_log(implode(',', $matches['0'])).'", where the bound variables are "'.str_log(implode(',', array_keys($execute))).'"', $e);
+                    throw new bException(tr('sql_error(): Query ":query" failed with error HY093, the number of query tokens does not match the number of bound variables. The query contains tokens ":tokens", where the bound variables are ":variables"', array(':query' => $query, ':tokens' => implode(',', $matches['0']), ':variables' => implode(',', array_keys($execute)))), $e);
                 }
 
-                throw new bException('sql_error(): Query "'.str_log($query, 4096).'" failed with error HY093, One or more query tokens does not match the bound variables keys. The query contains tokens "'.str_log(implode(',', $matches['0'])).'", where the bound variables are "'.str_log(implode(',', array_keys($execute))).'"', $e);
+                throw new bException(tr('sql_error(): Query ":query" failed with error HY093, One or more query tokens does not match the bound variables keys. The query contains tokens ":tokens", where the bound variables are ":variables"', array(':query' => $query, ':tokens' => implode(',', $matches['0']), ':variables' => implode(',', array_keys($execute)))), $e);
 
             case '23000':
                 /*
@@ -111,13 +111,13 @@ function sql_error($e, $query, $execute, $sql = null){
                          */
                         if(!is_array($query)){
                             if(empty($query['db'])){
-                                throw new bException('sql_error(): "'.str_log($query, 4096).'" failed, access to database denied', $e);
+                                throw new bException(tr('sql_error(): Query ":query" failed, access to database denied', array(':query' => $query)), $e);
                             }
 
-                            throw new bException('sql_error(): Cannot use database "'.str_log($query['db']).'", this user has no access to it', $e);
+                            throw new bException(tr('sql_error(): Cannot use database ":db", this user has no access to it', array(':db' => $query['db'])), $e);
                         }
 
-                        throw new bException('sql_error(): Cannot use database with query "'.str_log(debug_sql($query, $execute, true), 4096).'", this user has no access to it', $e);
+                        throw new bException(tr('sql_error(): Cannot use database with query ":query", this user has no access to it', array(':query' => debug_sql($query, $execute, true))), $e);
 
                     case 1049:
                         /*
@@ -127,9 +127,9 @@ function sql_error($e, $query, $execute, $sql = null){
 
                         if((SCRIPT == 'init')){
                             if($retry){
-                                $e = new bException('sql_error(): Cannot use database "'.isset_get($query['db']).'", it does not exist and cannot be created automatically with the current user "'.isset_get($query['user']).'"', $e);
-                                $e->addMessages('sql_error(): Possible reason can be that the configured user does not have the required GRANT to create database');
-                                $e->addMessages('sql_error(): Possible reason can be that MySQL cannot create the database because the filesystem permissions of the mysql data files has been borked up (on linux, usually this is /var/lib/mysql, and this should have the user:group mysql:mysql)');
+                                $e = new bException(tr('sql_error(): Cannot use database ":db", it does not exist and cannot be created automatically with the current user ":user"', array(':db' => isset_get($query['db']), ':user' => isset_get($query['user']))), $e);
+                                $e->addMessages(tr('sql_error(): Possible reason can be that the configured user does not have the required GRANT to create database'));
+                                $e->addMessages(tr('sql_error(): Possible reason can be that MySQL cannot create the database because the filesystem permissions of the mysql data files has been borked up (on linux, usually this is /var/lib/mysql, and this should have the user:group mysql:mysql)'));
 
                                 throw $e;
                             }
@@ -144,31 +144,31 @@ function sql_error($e, $query, $execute, $sql = null){
                             return sql_connect($query);
                         }
 
-                        throw new bException('sql_error(): Cannot use database "'.str_log($query['db']).'", it does not exist', $e);
+                        throw new bException(tr('sql_error(): Cannot use database ":db", it does not exist', array(':db' => $query['db'])), $e);
 
                     case 1052:
                         /*
                          * Integrity constraint violation
                          */
-                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" contains an abiguous column', $e);
+                        throw new bException(tr('sql_error(): Query ":query" contains an abiguous column', array(':query' => debug_sql($query, $execute, true))), $e);
 
                     case 1054:
                         /*
                          * Column not found
                          */
-                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" refers to a column that does not exist', $e);
+                        throw new bException(tr('sql_error(): Query ":query" refers to a column that does not exist', array(':query' => debug_sql($query, $execute, true))), $e);
 
                     case 1064:
                         /*
                          * Syntax error or access violation
                          */
-                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" has a syntax error', $e);
+                        throw new bException(tr('sql_error(): Query ":query" has a syntax error', array(':query' => debug_sql($query, $execute, true))), $e);
 
                     case 1072:
                         /*
                          * Adding index error, index probably does not exist
                          */
-                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" failed with error 1072 with the message "'.isset_get($error[2]).'"', $e);
+                        throw new bException(tr('sql_error(): Query ":query" failed with error 1072 with the message ":message"', array(':query' => debug_sql($query, $execute, true), ':message' => isset_get($error[2]))), $e);
 
                     case 1005:
                         //FALLTHROUGH
@@ -186,27 +186,27 @@ function sql_error($e, $query, $execute, $sql = null){
                             $fk = str_replace("\n", ' ', $fk);
 
                         }catch(Exception $e){
-                            throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" failed with error 1005, but another error was encountered while trying to obtain FK error data', $e);
+                            throw new bException(tr('sql_error(): Query ":query" failed with error 1005, but another error was encountered while trying to obtain FK error data', array(':query' => debug_sql($query, $execute, true))), $e);
                         }
 
-                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" failed with error 1005 with the message "'.$fk.'"', $e);
+                        throw new bException(tr('sql_error(): Query ":query" failed with error 1005 with the message ":message"', array(':query' => debug_sql($query, $execute, true), ':message' => $fk)), $e);
 
                     case 1146:
                         /*
                          * Base table or view not found
                          */
-                        throw new bException('sql_error(): Query "'.str_log(debug_sql($query, $execute, true), 4096).'" refers to a base table or view that does not exist', $e);
+                        throw new bException(tr('sql_error(): Query ":query" refers to a base table or view that does not exist', array(':query' => debug_sql($query, $execute, true))), $e);
 
                     default:
                         if(!is_string($query)){
                             if(!is_object($query) or !($query instanceof PDOStatement)){
-                                throw new bException('sql_error(): Specified query is neither a SQL string or a PDOStatement it seems to be a "'.gettype($query).'"', 'invlaid');
+                                throw new bException('sql_error(): Specified query is neither a SQL string or a PDOStatement it seems to be a ":type"', array(':type' => gettype($query)), 'invalid');
                             }
 
                             $query = $query->queryString;
                         }
 
-                        throw new bException('sql_error(): Query "'.str_log(debug_sql(preg_replace('!\s+!', ' ', $query), $execute, true)).'" failed', $e);
+                        throw new bException(tr('sql_error(): Query ":query" failed', array(':query' => debug_sql(preg_replace('!\s+!', ' ', $query), $execute, true))), $e);
 
                         $body = "SQL STATE ERROR : \"".$error[0]."\"\n".
                                 "DRIVER ERROR    : \"".$error[1]."\"\n".
