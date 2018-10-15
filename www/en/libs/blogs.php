@@ -457,9 +457,10 @@ function blogs_post_update($post, $params = null){
 
         if(isset_get($post['status']) === 'published'){
             sitemap_add_entry(array('url'              => $post['url'],
-                                  'priority'         => $params['sitemap_priority'],
-                                  'page_modifiedon'  => date_convert(null, 'mysql'),
-                                  'change_frequency' => $params['sitemap_change_frequency']));
+                                    'language'         => $post['language'],
+                                    'priority'         => $params['sitemap_priority'],
+                                    'page_modifiedon'  => date_convert(null, 'mysql'),
+                                    'change_frequency' => $params['sitemap_change_frequency']));
         }
 
         run_background('base/sitemap update --env '.ENVIRONMENT);
@@ -528,9 +529,10 @@ function blogs_update_post_status($blog, $params, $list, $status){
 
                 case 'published':
                     sitemap_add_entry(array('url'              => $post['url'],
-                                          'priority'         => $params['sitemap_priority'],
-                                          'page_modifiedon'  => date_convert(null, 'mysql'),
-                                          'change_frequency' => $params['sitemap_change_frequency']));
+                                            'language'         => $post['language'],
+                                            'priority'         => $params['sitemap_priority'],
+                                            'page_modifiedon'  => date_convert(null, 'mysql'),
+                                            'change_frequency' => $params['sitemap_change_frequency']));
             }
 
             $execute[':id'] = $id;
@@ -2363,9 +2365,10 @@ function blogs_update_urls($blogs = null, $category = null){
 
                         if($post['status'] == $params['status']){
                             sitemap_add_entry(array('url'              => $post['url'],
-                                                  'priority'         => $params['sitemap_priority'],
-                                                  'page_modifiedon'  => date_convert(null, 'mysql'),
-                                                  'change_frequency' => $params['sitemap_change_frequency']));
+                                                    'language'         => $post['language'],
+                                                    'priority'         => $params['sitemap_priority'],
+                                                    'page_modifiedon'  => date_convert(null, 'mysql'),
+                                                    'change_frequency' => $params['sitemap_change_frequency']));
                         }
 
                         cli_dot(1);
@@ -2494,12 +2497,12 @@ function blogs_regenerate_sitemap_data($blogs_id, $level, $change_frequency, $gr
             $count++;
 
             sitemap_add_entry(array('file'             => $file,
-                                  'group'            => $group,
-                                  'language'         => $post['language'],
-                                  'url'              => $post['url'],
-                                  'change_frequency' => $change_frequency,
-                                  'page_modifiedon'  => ($post['modifiedon'] ? $post['modifiedon'] : $post['createdon']),
-                                  'level'         => $level));
+                                    'group'            => $group,
+                                    'language'         => $post['language'],
+                                    'url'              => $post['url'],
+                                    'change_frequency' => $change_frequency,
+                                    'page_modifiedon'  => ($post['modifiedon'] ? $post['modifiedon'] : $post['createdon']),
+                                    'level'            => $level));
         }
 
         cli_dot(false);
