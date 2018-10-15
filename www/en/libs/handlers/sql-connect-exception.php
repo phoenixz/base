@@ -3,7 +3,7 @@ try{
     global $_CONFIG;
 
     if($e->getMessage() == 'could not find driver'){
-        throw new bException('sql_connect(): Failed to connect with "'.str_log($connector['driver']).'" driver, it looks like its not available', 'driverfail');
+        throw new bException(tr('sql_connect(): Failed to connect with ":driver" driver, it looks like its not available', array(':driver' => $connector['driver'])), 'driverfail');
     }
 
     log_console(tr('Encountered exception ":e" while connecting to database server, attempting to resolve', array(':e' => $e->getMessage())), 'yellow');
@@ -14,16 +14,14 @@ try{
     foreach(array('driver', 'host', 'user', 'pass') as $key){
         if(empty($connector[$key])){
             if($_CONFIG['production']){
-                throw new bException('sql_connect(): The database configuration has key "'.str_log($key).'" missing, check your database configuration in '.ROOT.'/config/production.php');
+                throw new bException(tr('sql_connect(): The database configuration has key ":key" missing, check your database configuration in :root/config/production.php', array(':key' => $key, ':root' => ROOT)));
             }
 
-            throw new bException('sql_connect(): The database configuration has key "'.str_log($key).'" missing, check your database configuration in either '.ROOT.'/config/production.php and/or '.ROOT.'/config/'.ENVIRONMENT.'.php');
+            throw new bException(tr('sql_connect(): The database configuration has key ":key" missing, check your database configuration in either :root/config/production.php and/or :root/config/:environment.php', array(':key' => $key, ':root' => ROOT, ':environment' => ENVIRONMENT)));
         }
     }
 
     switch($e->getCode()){
-        case 2006:
-            // FALLTHROUGH
         case 2002:
             /*
              * Connection refused
