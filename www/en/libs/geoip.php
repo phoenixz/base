@@ -4,19 +4,39 @@
  *
  * This library contains functions to manage GEO IP detection
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Johan Geuze, Sven Oostenbrink <support@capmega.com>
+ * @category Function reference
+ * @package geoip
  */
 
 
 
 /*
  * Get the requested data for the specified IP address
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geoip
+ * @exception When no IP was specified, and no remote client IP was found either
+ * @see geoip_get_country()
+ * @see geoip_get_city()
+ *
+ * @param string $ip The IP to be tested. If no IP is specified, the remote client's IP will be used (if available)
+ * @param string $columns
+ * @return string The geo data about where this IP is registered, null if not found
  */
 function geoip_get($ip = null, $columns = '*'){
     try{
-        if(!$ip){
-            $ip = $_SERVER['REMOTE_ADDR'];
+        if($ip === null){
+            $ip = isset_get($_SERVER['REMOTE_ADDR']);
+
+            if(!$ip){
+                throw new bException(tr('geoip_get_country(): No IP specified and no remote client IP found either'), 'not-available');
+            }
         }
 
         $data = sql_get('SELECT `geoip_locations`.'.$columns.'
@@ -63,8 +83,19 @@ function geoip_get($ip = null, $columns = '*'){
 
 /*
  * Return the country for the specified IP address
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geoip
+ * @exception When no IP was specified, and no remote client IP was found either
+ * @see geoip_get()
+ *
+ * @param string $ip The IP to be tested. If no IP is specified, the remote client's IP will be used (if available)
+ * @return string The country where this IP is registered, null if not found
  */
-function geoip_get_country($ip){
+function geoip_get_country($ip = null){
     try{
         return geoip_get($ip, 'country');
 
@@ -77,6 +108,17 @@ function geoip_get_country($ip){
 
 /*
  * Return the city for the specified IP address
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geoip
+ * @exception When no IP was specified, and no remote client IP was found either
+ * @see geoip_get()
+ *
+ * @param string $ip The IP to be tested. If no IP is specified, the remote client's IP will be used (if available)
+ * @return string The city where this IP is registered, null if not found
  */
 function geoip_get_city($ip){
     try{
@@ -84,6 +126,62 @@ function geoip_get_city($ip){
 
     }catch(Exception $e){
         throw new bException('geoip_get_city(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns true if the specified IP is european
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geoip
+ * @exception When no IP was specified, and no remote client IP was found either
+ * @see geoip_get()
+ * @see geoip_get_country()
+ *
+ * @param string $ip The IP to be tested. If no IP is specified, the remote client's IP will be used (if available)
+ * @return boolean True if the specified IP is registered to be located in a european country, false otherwise
+ */
+function geoip_is_european($ip){
+    try{
+        $country   = geoip_get_country($ip);
+        $countries = array('austria',
+                           'belgium',
+                           'bulgaria',
+                           'croatia',
+                           'cyprus',
+                           'czech republic',
+                           'denmark',
+                           'estonia',
+                           'finland',
+                           'france',
+                           'germany',
+                           'greece',
+                           'hungary',
+                           'ireland',
+                           'italy',
+                           'latvia',
+                           'lithuania',
+                           'luxembourg',
+                           'malta',
+                           'netherlands',
+                           'poland',
+                           'portugal',
+                           'romania',
+                           'slovakia',
+                           'slovenia',
+                           'spain',
+                           'sweden',
+                           'united kingdom');
+
+        return in_array($country, $countries);
+
+    }catch(Exception $e){
+        throw new bException('geoip_is_european(): Failed', $e);
     }
 }
 ?>
