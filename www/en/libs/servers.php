@@ -34,7 +34,7 @@ function servers_library_init(){
 
 
 /*
- *
+ * Validate the specified server. In case $structure_only is specified, only the array keys will be ensured available. If $password_strength is specified true, the specified passwords will be tested for strength as well.
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -53,15 +53,11 @@ function servers_validate($server, $structure_only = false, $password_strength =
     try{
         load_libs('validate,file,seo,customers,providers');
 
-        $v = new validate_form($server, 'id,ipv4,ipv6,port,hostname,hostnames,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id,allow_sshd_modification');
+        $v = new validate_form($server, 'id,ipv4,ipv6,port,hostname,hostnames,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id,bill_duedate,cost,interval,allow_sshd_modification,register');
 
         if($structure_only){
             return $server;
         }
-
-        $v->isNotEmpty($server['hostname']   , tr('Please specifiy a hostname'));
-        $v->isNotEmpty($server['port']       , tr('Please specifiy a port'));
-        $v->isNotEmpty($server['seocustomer'], tr('Please specifiy a customer'));
 
         /*
          * Check password
@@ -84,6 +80,7 @@ function servers_validate($server, $structure_only = false, $password_strength =
         /*
          * Hostname
          */
+        $v->isNotEmpty($server['hostname'], tr('Please specifiy a hostname'));
         $v->isDomain($server['hostname'], tr('The hostname ":hostname" is invalid', array(':hostname' => $server['hostname'])));
 
         if(!empty($server['url']) and !FORCE){
@@ -198,7 +195,7 @@ function servers_validate($server, $structure_only = false, $password_strength =
             }
 
         }else{
-            $v->setError(tr('Please specify a customer'));
+            $server['customers_id'] = null;
         }
 
         if($server['ssh_account']){
@@ -215,7 +212,7 @@ function servers_validate($server, $structure_only = false, $password_strength =
         /*
          * Already exists?
          */
-        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` = :ssh_accounts_id AND `id` != :id', true, array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_accounts_id'], ':id' => isset_get($server['id'], 0)), 'core');
+        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` '.sql_is($server['ssh_accounts_id']).' :ssh_accounts_id AND `id` != :id LIMIT 1', true, array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_accounts_id'], ':id' => isset_get($server['id'], 0)), 'core');
 
         if($exists){
             $v->setError(tr('A server with hostname ":hostname" and SSH account ":ssh_account" already exists', array(':hostname' => $server['hostname'], ':ssh_account' => $server['ssh_account'])));
@@ -255,7 +252,7 @@ function servers_insert($server){
                    VALUES                (:createdby , :meta_id , :status , :hostname , :seohostname , :port , :database_accounts_id , :bill_duedate , :cost , :interval , :providers_id , :customers_id , :ssh_accounts_id , :allow_sshd_modification , :description , :ipv4)',
 
                    array(':status'                  => ($server['ssh_accounts_id'] ? 'testing' : null),
-                         ':createdby'               => $_SESSION['user']['id'],
+                         ':createdby'               => isset_get($_SESSION['user']['id']),
                          ':meta_id'                 => meta_action(),
                          ':hostname'                => $server['hostname'],
                          ':seohostname'             => $server['seohostname'],
@@ -272,6 +269,11 @@ function servers_insert($server){
                          ':ipv4'                    => $server['ipv4']));
 
         $server['id'] = sql_insert_id();
+
+        if($server['register']){
+            ssh_add_known_host($server['hostname'], $server['port']);
+        }
+
         return $server;
 
     }catch(Exception $e){
