@@ -30,6 +30,7 @@ define('PHP_MINIMUM_VERSION' , '5.5.9');
  * script
  */
 define('STARTTIME', microtime(true));
+define('REQUEST'  , substr(uniqid(), 7));
 
 
 
@@ -1690,19 +1691,29 @@ function log_file($messages, $class = 'syslog', $color = null){
         }
 
         /*
+         * Add session data
+         */
+        if(PLATFORM_HTTP){
+            $session = '('.session_id().' / '.REQUEST.') ';
+
+        }else{
+            $session = '(CLI-'.getmypid().' / '.REQUEST.') ';
+        }
+
+        /*
          * Single log or multi log?
          */
         if(!$core or !$core->register('ready')){
             $file  = 'syslog';
-            $class = cli_color('[ '.$class.' ] ', 'white', null, true);
+            $class = $session.cli_color('[ '.$class.' ] ', 'white', null, true);
 
         }elseif($_CONFIG['log']['single']){
             $file  = 'syslog';
-            $class = cli_color('[ '.$class.' ] ', 'white', null, true);
+            $class = $session.cli_color('[ '.$class.' ] ', 'white', null, true);
 
         }else{
             $file  = $class;
-            $class = '';
+            $class = $session;
         }
 
         /*
