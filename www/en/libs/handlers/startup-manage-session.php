@@ -119,6 +119,18 @@ try{
      * Set cookie, but only if page is not API and domain has
      * cookie configured
      */
+    if($_CONFIG['sessions']['euro_cookies'] and empty($_COOKIE['base'])){
+        load_libs('geo,geoip');
+
+        if(geoip_is_european()){
+            /*
+             * All first visits to european countries require cookie permissions given!
+             */
+            $_SESSION['euro_cookie'] = true;
+            return;
+        }
+    }
+
     if(!empty($_CONFIG['cookie']['domain']) and !$core->callType('api')){
         /*
          *

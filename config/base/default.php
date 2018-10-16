@@ -351,6 +351,7 @@ $_CONFIG['sessions']           = array('lifetime'                           => 8
                                        'regenerate_id'                      => 600,                                                         // Time required to regenerate the session id, used to mitigate session fixation attacks. MUST BE LOWER THAN $_CONFIG[session][lifetime]!
                                        'check_referrer'                     => true,                                                        // If set to true, the referrer must contain the domain name
                                        'handler'                            => false,                                                       // false | mm | mc | sql Use the default PHP session manager, shared memory manager (mm), memcached (mc) or sql_sessions library to manage sessions
+                                       'euro_cookies'                       => false,                                                       // If set to true, all european countries will see a "This site uses cookies" warning before cookies are being sent
 
                                        'extended'                           => array('age'           => 2592000,                            //
                                                                                      'clear'         => true),                              //
