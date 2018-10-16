@@ -1667,7 +1667,7 @@ class validate_form {
     function isValid($throw_exception = true){
         try{
             if($this->errors and $throw_exception){
-                throw new bException($this->errors, 'validation');
+                throw new bException($this->errors, 'warning/validation');
             }
 
             return ! (boolean) $this->errors;
