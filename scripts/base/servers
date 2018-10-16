@@ -4,6 +4,7 @@
  * This is an empty test script template
  */
 $usage = './scripts/servers
+./scripts/servers add HOSTNAME [HOSTNAME HOSTNAME ...] [--port PORT]
 ./scripts/servers list [options]
 ./scripts/servers test [ssh|database|tunnel-database] [HOSTNAME]
 ./scripts/servers show SERVER
@@ -69,9 +70,41 @@ load_libs('servers,ssh');
 try{
     switch(cli_method()){
         case 'add':
-            $server['hostname'] = cli_argument(0);
-            $server['port']     = cli_argument(1);
-            servers_insert($server);
+            $port      = not_empty(cli_argument('--port'), ssh_get_port());
+            $register  = cli_argument('--register');
+            $hostnames = cli_arguments();
+            $count     = 0;
+
+            cli_no_arguments_left();
+
+            foreach($hostnames as $hostname){
+                try{
+                    servers_insert(array('hostname' => $hostname,
+                                         'port'     => $port));
+                    log_console(tr('Added server with hostname ":hostname"', array(':hostname' => $hostname)), 'green');
+                    $count++;
+
+                }catch(Exception $e){
+                    if($e->getRealCode() !== 'validation'){
+                        throw $e;
+                    }
+
+                    if(preg_match('/A server with hostname ".+?" and SSH account ".+?" already exists/', $e->getMessage())){
+                        log_console(tr('Server ":hostname" already exists', array(':hostname' => $hostname)), 'warning');
+
+                    }else{
+                        log_console($e);
+                    }
+                }
+            }
+
+            if($count){
+                log_console(tr('Added ":count" servers', array(':count' => $count)), 'success');
+
+            }else{
+                log_console(tr('Not added any servers'), 'warning');
+            }
+
             break;
 
         case 'update':
