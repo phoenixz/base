@@ -4112,15 +4112,6 @@ function debug_bar(){
 
 
 /*
- * Recursively cleanup the specified variable, removing any password like variable
- */
-function debug_cleanup($data){
-    return include(__DIR__.'/handlers/debug-cleanup.php');
-}
-
-
-
-/*
  *
  */
 function die_in($count, $message = null){

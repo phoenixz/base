@@ -1094,4 +1094,46 @@ function array_merge_null(){
         throw new bException('array_merge_null(): Failed', $e);
     }
 }
+
+
+
+/*
+ * Hide the specified keys from the specified array
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @param array
+ * @return array
+ */
+function array_hide($source, $keys = 'GLOBALS,%pass,ssh_key', $hide = '*** HIDDEN ***', $empty = '-'){
+    try{
+        $keys = array_force($keys);
+
+        foreach($keys as $key){
+            foreach($source as $source_key => &$source_value){
+                if(strstr($key, '%')){
+                    if(strstr($source_key, str_replace('%', '', $key))){
+                        $source_value = str_hide($source_value, $hide, $empty);
+                    }
+
+                }else{
+                    if($source_key === $key){
+                        $source_value = str_hide($source_value, $hide, $empty);
+                    }
+                }
+            }
+
+            unset($source_value);
+        }
+
+        return $source;
+
+    }catch(Exception $e){
+        throw new bException('array_merge_null(): Failed', $e);
+    }
+}
 ?>

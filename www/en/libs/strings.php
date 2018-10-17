@@ -890,6 +890,45 @@ function str_trim_array($source, $recurse = true){
 
 
 
+/*
+ * Returns a "*** HIDDEN ***" string if the specified string has content. If the string is empty, an "-" emtpy string will be retuned instead
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package strings
+ *
+ * @param string $string The string to "hide"
+ * @param string $hidden The string to return if the specified source string contains data
+ * @param string $string The string to "hide" empty strings with
+ * @return natural If the specified port was not empty, it will be returned. If the specified port was empty, the default port configuration will be returned
+ */
+function str_hide($string, $hide = '*** HIDDEN ***', $empty = '-'){
+    try{
+        if($string){
+            return $hide;
+        }
+
+        /*
+         * The string is empty
+         */
+        if($empty){
+            return $empty;
+        }
+
+        /*
+         * Always show the hidden message string
+         */
+        return $hidden;
+
+    }catch(Exception $e){
+        throw new bException('str_hide(): Failed', $e);
+    }
+}
+
+
+
 // :DELETE: This is not working
 ///*
 // *

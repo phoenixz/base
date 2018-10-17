@@ -6,9 +6,19 @@
         case 1049:
             if(!empty($retry)){
                 static $retry = true;
+                global $_CONFIG;
 
-                sql_error_init($e, $_CONFIG['db'][$connector], $connector);
-                return sql_init();
+                try{
+                    $core->sql['core']->query('DROP DATABASE IF EXISTS `'.$connector['db'].'`;');
+                    $core->sql['core']->query('CREATE DATABASE         `'.$connector['db'].'` DEFAULT CHARSET="'.$connector['charset'].'" COLLATE="'.$connector['collate'].'";');
+                    $core->sql['core']->query('USE                     `'.$connector['db'].'`');
+                    return true;
+
+                }catch(Exception $e){
+                    throw new bException('sql_init(): Failed', $e);
+                }
+
+                throw $e;
             }
 
             break;
@@ -28,7 +38,6 @@
     }
 
     try{
-        load_libs('sql-error');
         return sql_error($e, $_CONFIG['db'][$connector], null, isset_get($core->sql[$connector]));
 
     }catch(Exception $e){

@@ -143,6 +143,7 @@ try{
 
                     log_console('    '.SCRIPT.': Failed', 'exception');
                     log_console(tr('Exception function trace:'), 'exception');
+
                     if($trace){
                         show($trace, null, true);
 

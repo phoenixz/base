@@ -160,7 +160,6 @@ function sql_query($query, $execute = false, $connector = null){
             /*
              * Let sql_error() try and generate more understandable errors
              */
-            load_libs('sql-error');
             sql_error($e, $query, $execute, isset_get($core->sql[$connector]));
 
         }catch(Exception $e){
@@ -567,88 +566,83 @@ function sql_connect($connector, $use_database = true){
         /*
          * Connect!
          */
-        try{
-            $connector['pdo_attributes'][PDO::ATTR_ERRMODE]                  = PDO::ERRMODE_EXCEPTION;
-            $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = !(boolean) $connector['buffered'];
-            $connector['pdo_attributes'][PDO::MYSQL_ATTR_INIT_COMMAND]       = 'SET NAMES '.strtoupper($connector['charset']);
-            $retries = 7;
+        $connector['pdo_attributes'][PDO::ATTR_ERRMODE]                  = PDO::ERRMODE_EXCEPTION;
+        $connector['pdo_attributes'][PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = !(boolean) $connector['buffered'];
+        $connector['pdo_attributes'][PDO::MYSQL_ATTR_INIT_COMMAND]       = 'SET NAMES '.strtoupper($connector['charset']);
+        $retries = 7;
 
-            while(--$retries >= 0){
-                try{
-                    $connect_string = $connector['driver'].':host='.$connector['host'].(empty($connector['port']) ? '' : ';port='.$connector['port']).((empty($connector['db']) or !$use_database) ? '' : ';dbname='.$connector['db']);
-                    $pdo            = new PDO($connect_string, $connector['user'], $connector['pass'], $connector['pdo_attributes']);
+        while(--$retries >= 0){
+            try{
+                $connect_string = $connector['driver'].':host='.$connector['host'].(empty($connector['port']) ? '' : ';port='.$connector['port']).((empty($connector['db']) or !$use_database) ? '' : ';dbname='.$connector['db']);
+                $pdo            = new PDO($connect_string, $connector['user'], $connector['pass'], $connector['pdo_attributes']);
 
-                    log_console(tr('Connected with PDO connect string ":string"', array(':string' => $connect_string)), 'VERYVERBOSE');
-                    break;
+                log_console(tr('Connected with PDO connect string ":string"', array(':string' => $connect_string)), 'VERYVERBOSE');
+                break;
 
-                }catch(Exception $e){
-                    /*
-                     * This is a work around for the weird PHP MySQL error
-                     * "PDO::__construct(): send of 5 bytes failed with errno=32
-                     * Broken pipe". So far we have not been able to find a fix
-                     * for this but we have noted that you always have to
-                     * connect 3 times, and the 3rd time the bug magically
-                     * disappears. The work around will detect the error and
-                     * retry up to 3 times to work around this issue for now.
-                     *
-                     * Over time, it has appeared that the cause of this issue
-                     * may be that MySQL is chewing on a huge and slow query
-                     * which prevents it from accepting new connections. This is
-                     * not confirmed yet, but very likely. Either way, this
-                     * "fix" still fixes the issue..
-                     */
-                    log_console(tr('Failed to connect with PDO connect string ":string"', array(':string' => $connect_string)), 'exception');
-                    log_console($e->getMessage(), 'exception');
+            }catch(Exception $e){
+                /*
+                 * This is a work around for the weird PHP MySQL error
+                 * "PDO::__construct(): send of 5 bytes failed with errno=32
+                 * Broken pipe". So far we have not been able to find a fix
+                 * for this but we have noted that you always have to
+                 * connect 3 times, and the 3rd time the bug magically
+                 * disappears. The work around will detect the error and
+                 * retry up to 3 times to work around this issue for now.
+                 *
+                 * Over time, it has appeared that the cause of this issue
+                 * may be that MySQL is chewing on a huge and slow query
+                 * which prevents it from accepting new connections. This is
+                 * not confirmed yet, but very likely. Either way, this
+                 * "fix" still fixes the issue..
+                 */
+                log_console(tr('Failed to connect with PDO connect string ":string"', array(':string' => $connect_string)), 'exception');
+                log_console($e->getMessage(), 'exception');
 
-                    $message = $e->getMessage();
+                $message = $e->getMessage();
 
-                    if(!strstr($message, 'errno=32')){
-                        if($e->getMessage() == 'ERROR 2013 (HY000): Lost connection to MySQL server at \'reading initial communication packet\', system error: 0'){
-                            if(isset_get($connector['ssh_tunnel']['required'])){
-                                /*
-                                 * The tunneling server has "AllowTcpForwarding"
-                                 * set to "no" in the sshd_config, attempt auto
-                                 * fix
-                                 */
-                                os_enable_ssh_tcp_forwarding($connector['ssh_tunnel']['server']);
-                                continue;
-                            }
+                if(!strstr($message, 'errno=32')){
+                    if($e->getMessage() == 'ERROR 2013 (HY000): Lost connection to MySQL server at \'reading initial communication packet\', system error: 0'){
+                        if(isset_get($connector['ssh_tunnel']['required'])){
+                            /*
+                             * The tunneling server has "AllowTcpForwarding"
+                             * set to "no" in the sshd_config, attempt auto
+                             * fix
+                             */
+                            os_enable_ssh_tcp_forwarding($connector['ssh_tunnel']['server']);
+                            continue;
                         }
-
-                        /*
-                         * This is a different error. Continue throwing the
-                         * exception as normal
-                         */
-                        throw $e;
                     }
 
                     /*
-                     * This error seems to happen when MySQL is VERY busy
-                     * processing queries. Wait a little before trying again
+                     * This is a different error. Continue throwing the
+                     * exception as normal
                      */
-                    usleep(100000);
+                    throw $e;
                 }
-            }
 
-            try{
-                $pdo->query('SET time_zone = "'.$connector['timezone'].'";');
-
-            }catch(Exception $e){
-                include(__DIR__.'/handlers/sql-timezone-fail.php');
+                /*
+                 * This error seems to happen when MySQL is VERY busy
+                 * processing queries. Wait a little before trying again
+                 */
+                usleep(100000);
             }
+        }
 
-            if(!empty($connector['mode'])){
-                $pdo->query('SET sql_mode="'.$connector['mode'].'";');
-            }
+        try{
+            $pdo->query('SET time_zone = "'.$connector['timezone'].'";');
 
         }catch(Exception $e){
-            include(__DIR__.'/handlers/sql-connect-exception.php');
+            include(__DIR__.'/handlers/sql-error-timezone.php');
+        }
+
+        if(!empty($connector['mode'])){
+            $pdo->query('SET sql_mode="'.$connector['mode'].'";');
         }
 
         return $pdo;
 
     }catch(Exception $e){
-        throw new bException('sql_connect(): Failed', $e);
+        return include(__DIR__.'/handlers/sql-error-connect.php');
     }
 }
 
@@ -1804,7 +1798,7 @@ function sql_make_connector($name, $data){
 
         $template = array('driver'           => 'mysql',
                           'host'             => '127.0.0.1',
-                          'port'             => 3310,
+                          'port'             => null,
                           'db'               => '',
                           'user'             => '',
                           'pass'             => '',
@@ -1816,7 +1810,7 @@ function sql_make_connector($name, $data){
                           'limit_max'        => 10000,
                           'mode'             => 'PIPES_AS_CONCAT,IGNORE_SPACE,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS',
                           'ssh_tunnel'       => array('required'    => false,
-                                                      'source_port' => 3307,
+                                                      'source_port' => null,
                                                       'hostname'    => '',
                                                       'usleep'      => 1200000),
                           'pdo_attributes'   => array(),
@@ -1873,6 +1867,27 @@ function sql_test_tunnel($server){
     }catch(Exception $e){
         throw new bException(tr('sql_test_tunnel(): Failed'), $e);
     }
+}
+
+
+
+/*
+ * Process SQL query errors
+ *
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sql
+ * @exception bException when the test failse
+ *
+ * @param bException $e The query exception
+ * @param string $query The executed query
+ * @param array $execute The bound query variables
+ * @param bException $sql The PDO SQL object
+ * @return void
+ */
+function sql_error($e, $query, $execute, $sql){
+    include(__DIR__.'/handlers/sql-error.php');
 }
 
 

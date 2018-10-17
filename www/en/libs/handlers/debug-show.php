@@ -18,7 +18,10 @@ try{
     /*
      * First cleanup data
      */
-    $data   = debug_cleanup($data);
+    if(is_array($data)){
+        $data = array_hide($data, 'GLOBALS,%password,ssh_key');
+    }
+
     $retval = '';
 
     if(PLATFORM_HTTP){

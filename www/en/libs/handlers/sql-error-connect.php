@@ -14,14 +14,43 @@ try{
     foreach(array('driver', 'host', 'user', 'pass') as $key){
         if(empty($connector[$key])){
             if($_CONFIG['production']){
-                throw new bException(tr('sql_connect(): The database configuration has key ":key" missing, check your database configuration in :root/config/production.php', array(':key' => $key, ':root' => ROOT)));
+                throw new bException(tr('sql_connect(): The database configuration has key ":key" missing, check your database configuration in :rootconfig/production.php', array(':key' => $key, ':root' => ROOT)), 'configuration');
             }
 
-            throw new bException(tr('sql_connect(): The database configuration has key ":key" missing, check your database configuration in either :root/config/production.php and/or :root/config/:environment.php', array(':key' => $key, ':root' => ROOT, ':environment' => ENVIRONMENT)));
+            throw new bException(tr('sql_connect(): The database configuration has key ":key" missing, probably check your database connector configuration, possibly in :rootconfig/production.php and / or :rootconfig/:environment.php', array(':key' => $key, ':root' => ROOT, ':environment' => ENVIRONMENT), false), 'configuration');
         }
     }
 
     switch($e->getCode()){
+        case 1049:
+            /*
+             * Database not found!
+             */
+            $core->register['no-db'] = true;
+
+            if(!((PLATFORM_CLI) and (SCRIPT == 'init'))){
+                throw $e;
+            }
+
+            log_console(tr('Database base server conntection failed because database ":db" does not exist. Attempting to connect without using a database to correct issue', array(':db' => $connector['db'])), 'yellow');
+
+            /*
+             * We're running the init script, so go ahead and create the DB already!
+             */
+            $db  = $connector['db'];
+            unset($connector['db']);
+            $pdo = sql_connect($connector);
+
+            log_console(tr('Successfully connected to database server. Attempting to create database ":db"', array(':db' => $db)), 'yellow');
+
+            $pdo->query('CREATE DATABASE `'.$db.'`');
+
+            log_console(tr('Reconnecting to database server with database ":db"', array(':db' => $db)), 'yellow');
+
+            $connector['db'] = $db;
+            $pdo = sql_connect($connector);
+            break;
+
         case 2002:
             /*
              * Connection refused
@@ -55,35 +84,6 @@ try{
 
 //:TODO: SSH to the server and check if the msyql process is up!
             throw new bException(tr('sql_connect(): Connection refused for SSH tunnel requiring host ":hostname::port". The tunnel process is available, maybe the MySQL on the target server is down?', array(':hostname' => $connector['host'], ':port' => $connector['port'])), $e);
-
-        case 1049:
-            /*
-             * Database not found!
-             */
-            $core->register['no-db'] = true;
-
-            if(!((PLATFORM_CLI) and (SCRIPT == 'init'))){
-                throw $e;
-            }
-
-            log_console(tr('Database base server conntection failed because database ":db" does not exist. Attempting to connect without using a database to correct issue', array(':db' => $connector['db'])), 'yellow');
-
-            /*
-             * We're running the init script, so go ahead and create the DB already!
-             */
-            $db  = $connector['db'];
-            unset($connector['db']);
-            $pdo = sql_connect($connector);
-
-            log_console(tr('Successfully connected to database server. Attempting to create database ":db"', array(':db' => $db)), 'yellow');
-
-            $pdo->query('CREATE DATABASE `'.$db.'`');
-
-            log_console(tr('Reconnecting to database server with database ":db"', array(':db' => $db)), 'yellow');
-
-            $connector['db'] = $db;
-            $pdo = sql_connect($connector);
-            break;
 
         case 2006:
             if(empty($connector['ssh_tunnel']['required'])){
@@ -125,14 +125,6 @@ try{
             break;
 
         default:
-            try{
-                load_libs('sql-error');
-                return sql_error($e, '', $connector, isset_get($pdo));
-
-            }catch(Exception $e){
-                throw new bException('sql_connect(): Failed', $e);
-            }
-
             throw new bException('sql_connect(): Failed to create PDO SQL object', $e);
     }
 
