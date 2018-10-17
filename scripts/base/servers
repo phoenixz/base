@@ -4,10 +4,10 @@
  * This is an empty test script template
  */
 $usage = './scripts/servers
-./scripts/servers add HOSTNAME [HOSTNAME HOSTNAME ...] [--port PORT]
-./scripts/servers list [options]
+./scripts/servers add HOSTNAME [HOSTNAME HOSTNAME ...] [--port PORT] [--register] [--account ACCOUNT]
+./scripts/servers list servers | accounts [options]
 ./scripts/servers test [ssh|database|tunnel-database] [HOSTNAME]
-./scripts/servers show SERVER
+./scripts/servers show server | account SERVER
 ./scripts/servers test TEST SERVER';
 
 $help  = 'This is the servers management script
@@ -21,30 +21,47 @@ METHODS
 
 
 
-list [%HOSTNAME%]               - List all registerd servers, or by part of
+list
+    servers [%HOSTNAME%]        - List all registerd servers, or by part of
                                   specified hostname
 
-    --only-hostnames            - Show only the hostnames. Useful with --quiet
+        --only-hostnames        - Show only the hostnames. Useful with --quiet
 
-    --provider SERVER           - List all servers for the specified provider
+        --provider SERVER       - List all servers for the specified provider
 
-    --customer CUSTOMER         - List all servers for the specified customer
+        --customer CUSTOMER     - List all servers for the specified customer
+
+    accounts [%ACCOUNTNAME%]    - List all registerd server SSH accounts, or by
+                                  part of specified accounts name
 
 proxies
-    insert  ROOT-HOSTNAME NEW-HOSTNAME LOCATION TARGET-HOSTNAME [PROTOCOL[:PORT],PROTOCOL[:PORT]...]
+    insert  ROOT-HOSTNAME       - Inserts a new server on the proxies chain
+    NEW-HOSTNAME LOCATION
+    TARGET-HOSTNAME
+    [PROTOCOL[:PORT],
+    PROTOCOL[:PORT]...]
 
-                                - Inserts a new server on the proxies chain
+    remove  ROOT-HOSTNAME       - Removes a server from the proxies chain
+    REMOVE-HOSTNAME
 
-    remove  ROOT-HOSTNAME REMOVEH-OSTNAME
-                                - Removes a server from the proxies chain
+show
+    server SERVER               - Show details about the specified server
 
-show SERVER                     - Show detaisl about the specified server
+    account ACCOUNT             - Show details about the specified SSH account
 
 test TEST SERVER                - Execute the specified TEST on the specified
                                   SERVER. Available tests are: ssh, database,
                                   tunnel, database-tunnel
 
 add HOSTNAME [SSH-PORT]         - Add specified hostname to the database
+
+    --account | --ssh-account   - What SSH account to link to these servers. The
+    [ACCOUNT]                     account can be specified by the accounts
+                                  username, or the accounts id.
+
+    --register                  - Automatically register the server fingerprints
+                                  in the known_hosts file (NOT RECOMMENDED FOR
+                                  SECURITY!)
 
 update HOSTNAME                 - Update specified hostname in the database
 
@@ -72,15 +89,27 @@ try{
         case 'add':
             $port      = not_empty(cli_argument('--port'), ssh_get_port());
             $register  = cli_argument('--register');
+            $account   = cli_argument('--ssh-account,--account', true);
             $hostnames = cli_arguments();
             $count     = 0;
 
             cli_no_arguments_left();
 
+            if($account){
+                $accounts_data = ssh_get_account($account);
+
+                if(!$accounts_data){
+                    throw new bException(tr('Specified account ":account" does not exist, try "servers list accounts"', array(':account' => $account)), 'warning/not-exist');
+                }
+            }
+
             foreach($hostnames as $hostname){
                 try{
-                    servers_insert(array('hostname' => $hostname,
-                                         'port'     => $port));
+                    servers_insert(array('hostname'    => $hostname,
+                                         'port'        => $port,
+                                         'register'    => $register,
+                                         'ssh_account' => isset_get($accounts_data['seoname'])));
+
                     log_console(tr('Added server with hostname ":hostname"', array(':hostname' => $hostname)), 'green');
                     $count++;
 
@@ -188,112 +217,178 @@ try{
             break;
 
         case 'list':
-            $only_hostnames = cli_argument('--only-hostnames');
-            $customer       = cli_argument('--customer', true);
-            $provider       = cli_argument('--provider', true);
-            $execute        = array();
-            $where          = array();
+            switch(cli_method(1)){
+                case 'servers':
+                    $only_hostnames = cli_argument('--only-hostnames');
+                    $customer       = cli_argument('--customer', true);
+                    $provider       = cli_argument('--provider', true);
+                    $execute        = array();
+                    $where          = array();
 
-            cli_no_arguments_left();
+                    cli_no_arguments_left();
 
-            if(DELETED){
-                $where[] = ' `servers`.`status` = "deleted" ';
+                    if(DELETED){
+                        $where[] = ' `servers`.`status` = "deleted" ';
 
-            }elseif(!ALL){
-                $where[] = ' `servers`.`status` IS NULL OR `servers`.`status` = "testing" ';
-            }
-
-            if(STATUS){
-                $execute = array_merge($execute, sql_in(ALL));
-                $where[] = ' `servers`.`status` IN ('.implode(', ', array_keys(ALL)).') ';
-            }
-
-            if($customer){
-                load_libs('customers');
-                $customers_id = customers_get($customer, 'id');
-
-                if(!$customers_id){
-                    throw new bException(tr('The specified customer ":customer" does not exist', array(':customer' => $customer)), 'warning');
-                }
-
-                $execute[':customers_id'] = $customers_id;
-                $where[] = ' `servers`.`customers_id` = :customers_id ';
-            }
-
-            if($provider){
-                load_libs('providers');
-                $providers_id = customers_get($provider, 'id');
-
-                if(!$providers_id){
-                    throw new bException(tr('The specified provider ":provider" does not exist', array(':provider' => $provider)), 'warning');
-                }
-
-                $execute[':providerss_id'] = $providers_id;
-                $where[] = ' `servers`.`providerss_id` = :providerss_id ';
-            }
-
-            $query   = 'SELECT    `servers`.`id`,
-                                  `servers`.`hostname`,
-                                  `servers`.`seohostname`,
-                                  `servers`.`status`,
-                                  `servers`.`createdon`,
-                                  `servers`.`description`,
-
-                                  `customers`.`name` AS `customer`,
-
-                                  `providers`.`name` AS `provider`,
-
-                                  `users`.`name`     AS `user_name`,
-                                  `users`.`email`    AS `user_email`,
-                                  `users`.`username` AS `user_username`,
-                                  `users`.`nickname` AS `user_nickname`
-
-                        FROM      `servers`
-
-                        LEFT JOIN `customers`
-                        ON        `customers`.`id` = `servers`.`customers_id`
-
-                        LEFT JOIN `providers`
-                        ON        `providers`.`id` = `servers`.`providers_id`
-
-                        LEFT JOIN `users`
-                        ON        `users`.`id` = `servers`.`createdby`';
-
-            if(empty($where)){
-                $where = '';
-
-            }else{
-                $where = ' WHERE '.implode(' AND ', $where);
-            }
-
-            $order   = ' ORDER BY `servers`.`status` IS NOT NULL DESC ';
-            $servers = sql_query($query.$where.$order.(LIMIT ? ' LIMIT '.LIMIT : ''), $execute);
-
-            if(!$servers->rowCount()){
-                    log_console(tr('There are currently no servers registered'), 'QUIET/yellow');
-
-            }else{
-                if($only_hostnames){
-                    log_console(tr('Hostname'), 'QUIET/cyan');
-
-                    while($server = sql_fetch($servers)){
-                        log_console($server['hostname']);
+                    }elseif(!ALL){
+                        $where[] = ' `servers`.`status` IS NULL OR `servers`.`status` = "testing" ';
                     }
 
-                }else{
-                    log_console(str_size(tr('#id'), 7).str_size(tr('Customer'), 25).str_size(tr('Provider'), 25).str_size(tr('Hostname'), 33).str_size(tr('Status'), 13).str_size(tr('Created by'), 32), 'QUIET/cyan');
-
-                    while($server = sql_fetch($servers)){
-                        log_console(str_size($server['id'], 6, ' ', true).' '.str_size(cli_status_color($server['customer']), 24).' '.str_size($server['provider'], 24).' '.str_size($server['hostname'], 32).' '.str_size($server['status'], 12).' '.name($server, 'user'));
+                    if(STATUS){
+                        $execute = array_merge($execute, sql_in(ALL));
+                        $where[] = ' `servers`.`status` IN ('.implode(', ', array_keys(ALL)).') ';
                     }
-                }
+
+                    if($customer){
+                        load_libs('customers');
+                        $customers_id = customers_get($customer, 'id');
+
+                        if(!$customers_id){
+                            throw new bException(tr('The specified customer ":customer" does not exist', array(':customer' => $customer)), 'warning');
+                        }
+
+                        $execute[':customers_id'] = $customers_id;
+                        $where[] = ' `servers`.`customers_id` = :customers_id ';
+                    }
+
+                    if($provider){
+                        load_libs('providers');
+                        $providers_id = customers_get($provider, 'id');
+
+                        if(!$providers_id){
+                            throw new bException(tr('The specified provider ":provider" does not exist', array(':provider' => $provider)), 'warning');
+                        }
+
+                        $execute[':providerss_id'] = $providers_id;
+                        $where[] = ' `servers`.`providerss_id` = :providerss_id ';
+                    }
+
+                    $query   = 'SELECT    `servers`.`id`,
+                                          `servers`.`hostname`,
+                                          `servers`.`seohostname`,
+                                          `servers`.`status`,
+                                          `servers`.`createdon`,
+                                          `servers`.`description`,
+
+                                          `customers`.`name` AS `customer`,
+
+                                          `providers`.`name` AS `provider`,
+
+                                          `users`.`name`     AS `user_name`,
+                                          `users`.`email`    AS `user_email`,
+                                          `users`.`username` AS `user_username`,
+                                          `users`.`nickname` AS `user_nickname`
+
+                                FROM      `servers`
+
+                                LEFT JOIN `customers`
+                                ON        `customers`.`id` = `servers`.`customers_id`
+
+                                LEFT JOIN `providers`
+                                ON        `providers`.`id` = `servers`.`providers_id`
+
+                                LEFT JOIN `users`
+                                ON        `users`.`id` = `servers`.`createdby`';
+
+                    if(empty($where)){
+                        $where = '';
+
+                    }else{
+                        $where = ' WHERE '.implode(' AND ', $where);
+                    }
+
+                    $order   = ' ORDER BY `servers`.`status` IS NOT NULL DESC ';
+                    $servers = sql_query($query.$where.$order.(LIMIT ? ' LIMIT '.LIMIT : ''), $execute);
+
+                    if(!$servers->rowCount()){
+                            log_console(tr('There are currently no servers registered'), 'QUIET/yellow');
+
+                    }else{
+                        if($only_hostnames){
+                            log_console(tr('Hostname'), 'QUIET/cyan');
+
+                            while($server = sql_fetch($servers)){
+                                log_console($server['hostname']);
+                            }
+
+                        }else{
+                            log_console(str_size(tr('#id'), 7).str_size(tr('Customer'), 25).str_size(tr('Provider'), 25).str_size(tr('Hostname'), 33).str_size(tr('Status'), 13).str_size(tr('Created by'), 32), 'QUIET/cyan');
+
+                            while($server = sql_fetch($servers)){
+                                log_console(str_size($server['id'], 6, ' ', true).' '.str_size(cli_status_color($server['customer']), 24).' '.str_size($server['provider'], 24).' '.str_size($server['hostname'], 32).' '.str_size($server['status'], 12).' '.name($server, 'user'));
+                            }
+                        }
+                    }
+
+                    break;
+
+                case 'accounts':
+                    cli_no_arguments_left();
+
+                    $execute  = array();
+                    $where    = array();
+                    $query    = 'SELECT    `ssh_accounts`.`id`,
+                                           `ssh_accounts`.`createdon`,
+                                           `ssh_accounts`.`createdby`,
+                                           `ssh_accounts`.`status`,
+                                           `ssh_accounts`.`name`,
+                                           `ssh_accounts`.`seoname`,
+                                           `ssh_accounts`.`username`,
+
+                                           `users`.`name`     AS `user_name`,
+                                           `users`.`email`    AS `user_email`,
+                                           `users`.`username` AS `user_username`,
+                                           `users`.`nickname` AS `user_nickname`
+
+                                 FROM      `ssh_accounts`
+
+                                 LEFT JOIN `users`
+                                 ON        `users`.`id` = `ssh_accounts`.`createdby`';
+
+                    if(DELETED){
+                        $where[] = ' `ssh_accounts`.`status` = "deleted" ';
+
+                    }elseif(!ALL){
+                        $where[] = ' `ssh_accounts`.`status` IS NULL ';
+                    }
+
+                    if(STATUS){
+                        $execute = array_merge($execute, sql_in(ALL));
+                        $where[] = ' `ssh_accounts`.`status` IN ('.implode(', ', array_keys(ALL)).') ';
+                    }
+
+                    if(empty($where)){
+                        $where = '';
+
+                    }else{
+                        $where = ' WHERE '.implode(' AND ', $where);
+                    }
+
+                    $order    = ' ORDER BY `ssh_accounts`.`status` IS NOT NULL DESC ';
+                    $accounts = sql_query($query.$where.$order.(LIMIT ? ' LIMIT '.LIMIT : ''), $execute);
+
+                    if(!$accounts->rowCount()){
+                            log_console(tr('There are currently no accounts registered'), 'QUIET/yellow');
+
+                    }else{
+                        log_console(str_size(tr('#id'), 7).str_size(tr('Name'), 33).str_size(tr('User name'), 33).str_size(tr('Status'), 13).str_size(tr('Created by'), 32), 'QUIET/cyan');
+
+                        while($account = sql_fetch($accounts)){
+                            log_console(str_size($account['id'], 6, ' ', true).' '.str_size($account['name'], 32).' '.str_size($account['username'], 32).' '.str_size($account['status'], 12).' '.name($account, 'user'));
+                        }
+                    }
+                    break;
+
+                case '':
+                    throw new bException(tr('No sub method specified for method "list"'), 'no-method');
+
+                default:
+                    throw new bException(tr('Unknown sub method ":method" specified for method "list"', array(':method' => cli_method(1))), 'unknown-method');
             }
 
             break;
 
         case 'proxies':
-            //load_libs('forwards');
-
             switch(cli_method(1)){
                 case 'insert':
                     load_libs('proxies');
@@ -345,60 +440,91 @@ try{
                     break;
 
                 case '':
-                    throw new bException(tr('No sub method specified for method "projects"'), 'no-method');
+                    throw new bException(tr('No sub method specified for method "proxies"'), 'no-method');
 
                 default:
-                    throw new bException(tr('Unknown sub method ":method" specified for method "projects"', array(':method' => cli_method())), 'unknown-method');
+                    throw new bException(tr('Unknown sub method ":method" specified for method "proxies"', array(':method' => cli_method(1))), 'unknown-method');
             }
 
             break;
 
         case 'show':
-            $server = cli_argument();
-            $server = servers_like($server);
-            $server = servers_get($server);
+            switch(cli_method(1)){
+                case 'server':
+                    $server = cli_argument();
+                    $server = servers_like($server);
+                    $server = servers_get($server, true);
 
-            if(empty($server['ssh_accounts_id'])){
-                $server['allow_tcp_forward'] = 'N/A';
-
-            }else{
-                try{
-                    load_libs('linux');
-                    $server['allow_tcp_forward'] = linux_get_ssh_tcp_forwarding($server);
-
-                }catch(Exception $e){
-                    if($e->getRealCode() !== 'host-verification-missing'){
-                        throw $e;
-                    }
-
-                    log_console(tr('Failed to get allow_tcp_forward information for host ":hostname", it has no SSH key fingerprint in the known_hosts file.', array(':hostname' => $server['hostname'])), 'warning');
-                }
-            }
-
-            ksort($server);
-            $hostnames = $server['hostnames'];
-
-            unset($server['ssh_key']);
-            unset($server['hostnames']);
-            unset($hostnames[array_search($server['hostname'], $hostnames)]);
-
-            foreach($server as $key => $value){
-                if($key == 'password') continue;
-                log_console(cli_color($key.':', 'white').' '.json_encode_custom($value));
-            }
-
-            if($hostnames){
-                foreach($hostnames as $key => $hostname){
-                    if($key){
-                        log_console(cli_color('hostname aliases: ', 'white').$hostname);
+                    if(empty($server['ssh_accounts_id'])){
+                        $server['allow_tcp_forward'] = 'N/A';
 
                     }else{
-                        log_console(str_repeat(18, ' ').$value);
-                    }
-                }
+                        try{
+                            load_libs('linux');
+                            $server['allow_tcp_forward'] = linux_get_ssh_tcp_forwarding($server);
 
-            }else{
-                log_console(cli_color('hostname aliases: ', 'white').'-');
+                        }catch(Exception $e){
+                            if($e->getRealCode() !== 'host-verification-missing'){
+                                throw $e;
+                            }
+
+                            log_console(tr('Failed to get allow_tcp_forward information for host ":hostname", it has no SSH key fingerprint in the known_hosts file.', array(':hostname' => $server['hostname'])), 'warning');
+                        }
+                    }
+
+                    $server    = array_hide($server);
+                    $hostnames = $server['hostnames'];
+
+                    unset($server['hostnames']);
+                    unset($hostnames[array_search($server['hostname'], $hostnames)]);
+
+                    ksort($server);
+
+                    foreach($server as $key => $value){
+                        if($key == 'password') continue;
+                        log_console(cli_color($key.':', 'white').' '.json_encode_custom($value));
+                    }
+
+                    if($hostnames){
+                        foreach($hostnames as $key => $hostname){
+                            if($key){
+                                log_console(cli_color('hostname aliases: ', 'white').$hostname);
+
+                            }else{
+                                log_console(str_repeat(18, ' ').$value);
+                            }
+                        }
+
+                    }else{
+                        log_console(cli_color('hostname aliases: ', 'white').'-');
+                    }
+
+                    break;
+
+                case 'account':
+                    $account      = cli_argument();
+                    $account_data = ssh_get_account($account);
+
+                    if(!$account_data){
+                        throw new bException(tr('The specified SSH account ":account" does not exist', array(':account' => $account)), 'not-exist');
+                    }
+
+                    $account_data = array_hide($account_data);
+
+                    ksort($account_data);
+
+                    foreach($account_data as $key => $value){
+                        if($key == 'password') continue;
+                        log_console(cli_color($key.':', 'white').' '.json_encode_custom($value));
+                    }
+
+                    break;
+
+                case '':
+                    throw new bException(tr('No sub method specified for method "show"'), 'no-method');
+
+                default:
+                    throw new bException(tr('Unknown sub method ":method" specified for method "show"', array(':method' => cli_method(1))), 'unknown-method');
             }
 
             break;
