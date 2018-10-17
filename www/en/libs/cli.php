@@ -36,14 +36,23 @@ function cli_library_init(){
 
 
 /*
- * Downloaded from http://www.if-not-true-then-false.com/2010/php-class-for-coloring-php-command-line-cli-scripts-output-php-output-colorizing-using-bash-shell-colors/
+ * CLI color code management class
+ * Taken from http://www.if-not-true-then-false.com/2010/php-class-for-coloring-php-command-line-cli-scripts-output-php-output-colorizing-using-bash-shell-colors/
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
  */
 class Colors {
     private $foreground_colors = array();
     private $background_colors = array();
 
     public function __construct() {
-        // Set up shell colors
+        /*
+         * Set up shell colors
+         */
         $this->foreground_colors['black']        = '0;30';
         $this->foreground_colors['dark_gray']    = '1;30';
         $this->foreground_colors['blue']         = '0;34';
