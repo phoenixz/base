@@ -816,14 +816,28 @@ function ssh_validate_account($ssh){
  * @param natural $accounts_id The table ID for the account
  * @return array The account data for the specified $accounts_id
  */
-function ssh_get_account($accounts_id){
+function ssh_get_account($account){
     try{
-        if(!$accounts_id){
+        if(!$account){
             throw new bException(tr('ssh_get_account(): No accounts id specified'), 'not-specified');
         }
 
-        if(!is_numeric($accounts_id)){
-            throw new bException(tr('ssh_get_account(): Specified accounts id ":id" is not numeric', array(':id' => $accounts_id)), 'invalid');
+        if(!is_numeric($account)){
+            if(!is_string($account)){
+                throw new bException(tr('ssh_get_account(): Specified account ":account" should be either a numeric accounts id or an accounts name string', array(':account' => $account)), 'invalid');
+            }
+
+            $where   = ' WHERE `ssh_accounts`.`seoname`  = :seoname
+                         OR    `ssh_accounts`.`username` = :username
+                         OR    `ssh_accounts`.`name`     = :name';
+
+            $execute = array(':name'     => $account,
+                             ':seoname'  => $account,
+                             ':username' => $account);
+
+        }else{
+            $where   = ' WHERE `ssh_accounts`.`id` = :id';
+            $execute = array(':id' => $account);
         }
 
         $retval = sql_get('SELECT    `ssh_accounts`.`id`,
@@ -846,11 +860,9 @@ function ssh_get_account($accounts_id){
                            ON        `ssh_accounts`.`createdby`  = `createdby`.`id`
 
                            LEFT JOIN `users` AS `modifiedby`
-                           ON        `ssh_accounts`.`modifiedby` = `modifiedby`.`id`
+                           ON        `ssh_accounts`.`modifiedby` = `modifiedby`.`id`'.$where,
 
-                           WHERE     `ssh_accounts`.`id`         = :id',
-
-                           array(':id' => $accounts_id));
+                           $execute);
 
         return $retval;
 
