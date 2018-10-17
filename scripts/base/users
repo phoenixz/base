@@ -992,7 +992,7 @@ switch(cli_method()){
         }
 
         if(!$user){
-            throw new bException(tr('Specified user ":user" does not exist'), 'warning/not-exist');
+            throw new bException(tr('Specified user ":user" does not exist', array(':user' => $requested)), 'warning/not-exist');
         }
 
         $password = cli_readline(tr('Password: ')       , true);
