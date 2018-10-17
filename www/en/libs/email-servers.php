@@ -32,7 +32,7 @@ function email_servers_library_init(){
 
 
 /*
- * Validate a email-server
+ * Validate an email server
  *
  * This function will validate all relevant fields in the specified $email_server array
  *
@@ -122,6 +122,70 @@ function email_servers_validate($email_server){
 
 
 /*
+ * Validate an email domain
+ *
+ * This function will validate all relevant fields in the specified $domain array
+ *
+ * This function will generate HTML for an HTML select box using html_select() and fill it with the available categories
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package categories
+ *
+ * @param array $params The parameters required
+ * @paramkey $params name
+ * @paramkey $params class
+ * @paramkey $params extra
+ * @paramkey $params tabindex
+ * @paramkey $params empty
+ * @paramkey $params none
+ * @paramkey $params selected
+ * @paramkey $params parents_id
+ * @paramkey $params status
+ * @paramkey $params orderby
+ * @paramkey $params resource
+ * @return string HTML for a categories select box within the specified parameters
+ */
+function emails_servers_validate_domain($domain){
+    try{
+        load_libs('validate,seo,customers');
+
+        $v = new validate_form($domain, 'id,name,seocustomer,description');
+        $v->isNotEmpty($domain['name'], tr('Please specify a domain name'));
+        $v->hasMaxChars($domain['name'], 64, tr('Please specify a domain of less than 64 characters'));
+        $v->isFilter($domain['name'], FILTER_VALIDATE_DOMAIN, tr('Please specify a valid domain'));
+
+        if($domain['seocustomer']){
+            $domain['customer'] = customers_get($domain['seocustomer'], 'seoname');
+
+        }else{
+            $domain['customer'] = null;
+        }
+
+        $v->isValid();
+
+        $exists = sql_get('SELECT `id` FROM `domains` WHERE `name` = :name LIMIT 1', true, array(':name' => $domain['name']));
+
+        if($exists){
+            $v->setError(tr('The domain ":name" is already registered on this email server'. array(':name' => $domain['name'])));
+        }
+
+        $domain['seoname'] = seo_unique($domain['name'], 'domains', $domain['id']);
+
+        $v->isValid();
+
+        return $domain;
+
+    }catch(Exception $e){
+        throw new bException(tr('email_domains_validate(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * Return HTML for a email server select box
  *
  * This function will generate HTML for an HTML select box using html_select() and fill it with the available email servers
@@ -154,7 +218,7 @@ function email_servers_select($params = null){
         array_default($params, 'selected', null);
         array_default($params, 'status'  , null);
         array_default($params, 'empty'   , tr('No email servers available'));
-        array_default($params, 'none'    , tr('Select a email_server'));
+        array_default($params, 'none'    , tr('Select an email server'));
         array_default($params, 'tabindex', 0);
         array_default($params, 'extra'   , 'tabindex="'.$params['tabindex'].'"');
         array_default($params, 'orderby' , '`hostname`');
