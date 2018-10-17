@@ -351,7 +351,7 @@ function customers_select($params = null){
         }
 
         $query              = 'SELECT `seoname`, `name` FROM `customers` '.$where.' ORDER BY '.$params['orderby'];
-        $params['resource'] = sql_query($query, $execute);
+        $params['resource'] = sql_query($query, $execute, 'core');
         $retval             = html_select($params);
 
         return $retval;
@@ -404,7 +404,7 @@ function customers_get($customer, $column = null, $status = null, $categories_id
         $where   = ' WHERE '.implode(' AND ', $where).' ';
 
         if($column){
-            $retval = sql_get(' SELECT `'.$column.'` FROM `customers` '.$where, true, $execute);
+            $retval = sql_get('SELECT `'.$column.'` FROM `customers` '.$where, true, $execute, 'core');
 
         }else{
             $retval = sql_get('SELECT    `customers`.`id`,
@@ -454,7 +454,7 @@ function customers_get($customer, $column = null, $status = null, $categories_id
                                ON        `geo_cities`.`id`    = `customers`.`cities_id`
 
                                LEFT JOIN `categories`
-                               ON        `categories`.`id`    = `customers`.`categories_id` '.$where, $execute);
+                               ON        `categories`.`id`    = `customers`.`categories_id` '.$where, $execute, 'core');
         }
 
         return $retval;
