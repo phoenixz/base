@@ -105,7 +105,7 @@ function is_ipv6($version = null){
  * @param natural $port (1 - 65535) The port on the specified hostname or IP to connect to
  * @return boolean True if the specified host / port responds, false if not
  */
-function inet_test_host_port($host, $port, $exception = false){
+function inet_test_host_port($host, $port, $timeout = 5, $exception = false){
     try{
         if(!is_natural($port) or ($port > 65535)){
             throw new bException(tr('inet_test_host_port(): Specified port ":port" is invalid, please specify a natural number 1 - 65535', array(':port' => $port)), $e);
@@ -120,8 +120,12 @@ function inet_test_host_port($host, $port, $exception = false){
             }
         }
 
+        if(!is_natural($timeout) or ($timeout > 600)){
+            throw new bException(tr('inet_test_host_port(): Specified timeout ":timeout"is invalid. It must be a natural number <= 600', array(':timeout' => $timeout)), 'invalid');
+        }
+
         try{
-            safe_exec('nc -zv '.$host.' '.$port);
+            safe_exec('nc -zv '.$host.' '.$port.' -w '.$timeout);
             return true;
 
         }catch(Exception $e){
