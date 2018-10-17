@@ -1214,7 +1214,7 @@ function html_submit($params, $class = ''){
 function html_select_submit($params){
     try{
         array_params ($params);
-        array_default($params, 'name'      , 'dosubmit');
+        array_default($params, 'name'      , 'multisubmit');
         array_default($params, 'id'        , '');
         array_default($params, 'autosubmit', true);
         array_default($params, 'none'      , tr('Select action'));
