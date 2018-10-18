@@ -121,7 +121,7 @@ function inet_test_host_port($host, $port, $timeout = 5, $exception = false){
         }
 
         if(!is_natural($timeout) or ($timeout > 600)){
-            throw new bException(tr('inet_test_host_port(): Specified timeout ":timeout"is invalid. It must be a natural number <= 600', array(':timeout' => $timeout)), 'invalid');
+            throw new bException(tr('inet_test_host_port(): Specified timeout ":timeout"is invalid. It must be a natural number smaller than or equal to 600', array(':timeout' => $timeout)), 'invalid');
         }
 
         try{
