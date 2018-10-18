@@ -11,6 +11,112 @@
 
 
 /*
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @return void
+ */
+function googlemaps_library_init(){
+    try{
+        load_config('googlemaps');
+
+    }catch(Exception $e){
+        throw new bException('googlemaps_library_init(): Failed', $e);
+    }
+}
+
+
+
+/**
+ *
+ * @author Camilo Rodriguez <crodriguez@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category  Function reference
+ * @package   desktop_notification
+ *
+ * @param  $lat      latitude
+ * @param  $long     longitude
+ * @param  $zoom     zoom map
+ * @param  $api_key  Api key for use google maps
+ * @return
+ */
+function googlemaps_basic($latitude = null, $longitude = null, $zoom = 8, $api_key = null){
+    global $_CONFIG;
+
+    try{
+        if(!$api_key){
+            $api_key = $_CONFIG['google']['maps']['api_key'];
+        }
+
+        html_load_js('https://maps.googleapis.com/maps/api/js?key='.$api_key);
+
+        $html  = '<div id="map-canvas-md" class="embed-responsive-item"></div>';
+
+        /*
+         * Add javascript
+         */
+        $html .= html_script('
+                    $(document).ready(function() {
+                        var map,
+                            latitude = parseFloat($("#key_values\\\\[latitude\\\\]").val()),
+                            longitude = parseFloat($("#key_values\\\\[longitude\\\\]").val());
+
+                        function loadMap() {
+                            google.maps.event.addDomListener(
+                                    window,
+                                    "load",
+                                    initialize()
+                            );
+                        }
+
+                        function initialize() {
+                            var mapOptions = {
+                                center: new google.maps.LatLng(latitude, longitude),
+                                zoom: 14,
+                                zoomControl: true,
+                                scaleControl: true,
+                                zoomControlOptions: {
+                                    position: google.maps.ControlPosition.RIGHT_CENTER
+                                },
+                                streetViewControlOptions: {
+                                    position: google.maps.ControlPosition.RIGHT_CENTER
+                                }
+                            };
+                            map = new google.maps.Map(document.getElementById("map-canvas-md"), mapOptions);
+
+                            var marker = new google.maps.Marker({
+                                position: {lat: latitude, lng: longitude},
+                                map: map,
+                                title: "Escort"
+                            });
+
+                            google.maps.event.addListener(map, "click", function(event) {
+                                marker.setPosition(new google.maps.LatLng(event.latLng.lat(), event.latLng.lng()));
+                                $("#key_values\\\\[latitude\\\\]").val(event.latLng.lat());
+                                $("#key_values\\\\[longitude\\\\]").val(event.latLng.lng());
+                            });
+
+                        }
+
+                        loadMap();
+                    });');
+
+        return $html;
+
+    }catch(Exception $e){
+        throw new bException('googlemaps_basic(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Get streetview image from coords
  */
 function googlemaps_get_streetview_image($lat, $long, $x = 640, $y = 480) {

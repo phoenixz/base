@@ -212,7 +212,7 @@ function blogs_post_get($blog = null, $post = null, $language = null, $alternati
                                          `blogs_posts`.`body`,
                                          `blogs_posts`.`parents_id`,
                                          `blogs_posts`.`masters_id`,
-                                         `users`.`name` AS `assigned_to`
+                                         `users`.`email` AS `assigned_to`
 
                                FROM      `blogs_posts`
 
@@ -940,6 +940,27 @@ function blogs_update_key_value_store($post, $limit_key_values){
                                   ':value'          => $value,
                                   ':seovalue'       => seo_create_string($value)));
             }
+
+            switch($key){
+                case 'longitude':
+                    // FALLTROUGH
+                case 'latitude':
+                    $user_execute[':'.$key] = array_shift($values);
+            }
+        }
+
+        if(!empty($post['assigned_to_id']) and isset($user_execute)){
+            /*
+             * Update assigned user long/lat data with the blog information
+             */
+            $user_execute[':id'] = $post['assigned_to_id'];
+
+            sql_query('UPDATE `users`
+
+                       SET    `longitude` = :longitude,
+                              `latitude`  = :latitude
+
+                       WHERE  `id`        = :id', $user_execute);
         }
 
     }catch(Exception $e){
@@ -1182,7 +1203,6 @@ function blogs_validate_category($category, $blog){
             }
         }
 
-
         if($category['assigned_to']){
             if(!$category['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `username` = :username OR `email` = :email', 'id', array(':username' => $category['assigned_to'], ':email' => $category['assigned_to']))){
                 $v->setError(tr('The specified user ":user" does not exist', array(':user' => $category['assigned_to'])));
@@ -1417,20 +1437,15 @@ function blogs_validate_post($post, $params = null){
             $v->isNotEmpty ($post['keywords'],    tr('Please provide keywords for your :objectname', array(':objectname' => $params['object_name'])));
         }
 
-        if(!empty($params['label_assigned_to'])){
-            if(empty($post['assigned_to'])){
-                $post['assigned_to_id'] = null;
-
-            }else{
-                $post['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `email` = :email', 'id', array(':email' => $post['assigned_to']));
-
-                if(!$post['assigned_to_id']){
-                    $v->setError(tr('The specified assigned-to-user ":assigned_to" does not exist', array(':assigned_to' => $post['assigned_to'])));
-                }
-            }
+        if(empty($post['assigned_to'])){
+            $post['assigned_to_id'] = null;
 
         }else{
-            $post['assigned_to_id'] = null;
+            $post['assigned_to_id'] = sql_get('SELECT `id` FROM `users` WHERE `email` = :email', 'id', array(':email' => $post['assigned_to']));
+
+            if(!$post['assigned_to_id']){
+                $v->setError(tr('The specified assigned-to-user ":assigned_to" does not exist', array(':assigned_to' => $post['assigned_to'])));
+            }
         }
 
         if(!empty($params['label_featured'])){
