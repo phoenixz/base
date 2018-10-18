@@ -2468,8 +2468,12 @@ function check_csrf(){
         return true;
 
     }catch(Exception $e){
+        /*
+         * CSRF check failed, drop $_POST
+         */
+        unset($_POST);
         log_file($e);
-        throw new bException('check_csrf(): Failed', $e);
+        html_flash_set(tr('The form data was too old, please try again'), 'warning');
     }
 }
 

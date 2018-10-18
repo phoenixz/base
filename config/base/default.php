@@ -337,7 +337,7 @@ $_CONFIG['security']           = array('signin'                             => a
                                        'expose_php'                         => false,                                                       // If false, will hide the X-Powered-By PHP header. If true, will leave the header as is. If set to any other value, will send that value as X-Powered-By value
                                        'seed'                               => '%T"$#HET&UJHRT87',                                          // SEED for generating codes
 
-                                       'csrf'                               => array('enabled'          => true,                            // CSRF detection configuration. true | false | "force". Force will forcibly check every POST on CSRF
+                                       'csrf'                               => array('enabled'          => 'force',                         // CSRF detection configuration. true | false | "force". Force will forcibly check every POST on CSRF
                                                                                      'timeout'          => 0));                             // Timeout after page generation, where @ POST time the CSRF check will fail. Use 0 to disable
 
 

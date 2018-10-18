@@ -150,9 +150,12 @@ try{
                      * browser turned out to be problematic to say the least
                      */
                     log_file(tr('Received non existing cookie ":cookie", recreating', array(':cookie' => $_COOKIE['base'])), 'warning');
+
                     session_start();
                     header_remove('Set-Cookie');
                     session_id($_COOKIE['base']);
+                    html_flash_set(tr('Your browser cookie was expired, or does not exist. please try again'), 'warning');
+                    $_POST = array();
 
                 }else{
                     /*
