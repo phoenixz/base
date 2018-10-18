@@ -136,15 +136,43 @@ try{
          *
          */
         try{
-            session_start();
+// lgr2mpet49dib31m12bjgka104
+            if(isset($_COOKIE['base'])){
+                if(!preg_match('/[a-z0-9]+/', $_COOKIE['base'])){
+                     log_file(tr('Received invalid cookie ":cookie", dropping', array(':cookie' => $_COOKIE['base'])), 'warning');
+                     unset($_COOKIE['base']);
+                }
+
+                if(!file_exists(ROOT.'data/cookies/sess_'.$_COOKIE['base'])){
+                    /*
+                     * Start a session with a non-existing cookie. Rename our
+                     * session after the cookie, as deleting the cookie from the
+                     * browser turned out to be problematic to say the least
+                     */
+                    log_file(tr('Received non existing cookie ":cookie", recreating', array(':cookie' => $_COOKIE['base'])), 'warning');
+                    session_start();
+                    header_remove('Set-Cookie');
+                    session_id($_COOKIE['base']);
+
+                }else{
+                    /*
+                     * Start a normal session with cookie
+                     */
+                    session_start();
+                }
+
+            }else{
+                /*
+                 * No cookie received, start a fresh session
+                 */
+                session_start();
+            }
 
         }catch(Exception $e){
             /*
              * Session startup failed. Clear session and try again
              */
             try{
-                session_stop();
-                session_start();
                 session_regenerate_id(true);
 
             }catch(Exception $e){

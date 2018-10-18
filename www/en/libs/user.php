@@ -934,6 +934,8 @@ function user_signout() {
     global $_CONFIG;
 
     try{
+        $cookie = isset_get($_COOKIE['base']);
+
         if(isset($_COOKIE['extsession'])) {
             /*
              * Remove cookie
@@ -951,6 +953,10 @@ function user_signout() {
         unset($_SESSION['user']);
 
         session_destroy();
+
+        if($cookie){
+            file_delete(ROOT.'data/cookies/sess_'.$cookie);
+        }
 
     }catch(Exception $e){
         throw new bException('user_signout(): Failed', $e);

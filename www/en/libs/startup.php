@@ -2423,17 +2423,20 @@ function check_csrf(){
         }
 
         if(empty($_POST['csrf'])){
-            throw new bException(tr('check_csrf(): No CSRF field specified'), 'not-specified');
+            throw new bException(tr('check_csrf(): No CSRF field specified'), 'warning/not-specified');
         }
 
         if($core->callType('ajax')){
             if(substr($_POST['csrf'], 0, 5) != 'ajax_'){
+                /*
+                 * Invalid CSRF code is sppokie, don't make this a warning
+                 */
                 throw new bException(tr('check_csrf(): Specified CSRF ":code" is invalid'), 'invalid');
             }
         }
 
         if(empty($_SESSION['csrf'][$_POST['csrf']])){
-            throw new bException(tr('check_csrf(): Specified CSRF ":code" does not exist', array(':code' => $_POST['csrf'])), 'not-exist');
+            throw new bException(tr('check_csrf(): Specified CSRF ":code" does not exist', array(':code' => $_POST['csrf'])), 'warning/not-exist');
         }
 
         /*
@@ -2449,7 +2452,7 @@ function check_csrf(){
          */
         if($_CONFIG['security']['csrf']['timeout']){
             if(($timestamp + $_CONFIG['security']['csrf']['timeout']) < $now->getTimestamp()){
-                throw new bException(tr('check_csrf(): Specified CSRF ":code" timed out', array(':code' => $_POST['csrf'])), 'timeout');
+                throw new bException(tr('check_csrf(): Specified CSRF ":code" timed out', array(':code' => $_POST['csrf'])), 'warning/timeout');
             }
         }
 
@@ -2465,6 +2468,7 @@ function check_csrf(){
         return true;
 
     }catch(Exception $e){
+        log_file($e);
         throw new bException('check_csrf(): Failed', $e);
     }
 }
