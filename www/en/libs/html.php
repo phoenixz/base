@@ -774,8 +774,8 @@ function html_header($params = null, $meta = array()){
             /*
              * Always add a CSRF for ajax
              */
-            $csrf  = set_csrf('ajax_');
-            $html .= '<input type="hidden" id="ajax_csrf" name="ajax_csrf" value="'.$csrf.'">';
+            $csrf    = set_csrf('ajax_');
+            $retval .= '<input type="hidden" id="ajax_csrf" name="ajax_csrf" value="'.$csrf.'">';
         }
 
         return $retval;
