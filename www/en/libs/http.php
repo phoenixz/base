@@ -663,4 +663,64 @@ function set_limit(){
         throw new bException(tr('set_limit(): Failed'), $e);
     }
 }
+
+
+
+/*
+ *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package http
+ *
+ *
+ */
+function http_done(){
+    global $core;
+
+    try{
+        if(!isset($core)){
+            /*
+             * We died very early in startup. For more information see either
+             * the ROOT/data/log/syslog file, or your webserver log file
+             */
+            die('Exception: See log files');
+        }
+
+        if($core === false){
+            /*
+             * Core wasn't created yet, but uncaught exception handler basically
+             * is saying that's okay, just warning stuff
+             */
+            die();
+        }
+
+        if($core and empty($core->register['ready'])){
+            /*
+             * We died before the $core was ready. For more information, see
+             * the ROOT/data/log/syslog file, or your webserver log file
+             */
+            die('Exception: See log files');
+        }
+
+        $exit_code = isset_get($core->register['exit_code'], 0);
+
+        if(!defined('ENVIRONMENT')){
+            /*
+             * Oh crap.. Environment hasn't been defined, so we died VERY soon.
+             */
+            return false;
+        }
+
+        /*
+         * Do we need to run other shutdown functions?
+         */
+        shutdown();
+
+    }catch(Exception $e){
+        throw new bException('http_done(): Failed', $e);
+    }
+}
 ?>

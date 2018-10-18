@@ -4259,4 +4259,59 @@ function get_yes_no($value){
         throw new bException(tr('get_yes_no(): Failed'), $e);
     }
 }
+
+
+
+/*
+ * THIS FUNCTION SHOULD NOT BE RUN BY ANYBODY! IT IS EXECUTED AUTOMATICALLY ON
+ * SHUTDOWN
+ *
+ * This function facilitates execution of multiple registered shutdown functions
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param boolean $value The true or false value to be asserted
+ * @return string "yes" for boolean true, "no" for boolean false
+ */
+function shutdown(){
+    global $core;
+
+    try{
+        /*
+         * Do we need to run other shutdown functions?
+         */
+        foreach($core->register as $key => $value){
+            if(substr($key, 0, 9) !== 'shutdown_'){
+                continue;
+            }
+
+            $key = substr($key, 9);
+
+            /*
+             * Execute this shutdown function with the specified value
+             */
+            log_console(tr('shutdown(): Executing shutdown function ":function" with value ":value"', array(':function' => $key, ':value' => $value)), 'VERBOSE/cyan');
+
+            if(is_array($value)){
+                /*
+                 * Shutdown function value is an array. Execute it for each entry
+                 */
+                foreach($value as $entry){
+                    $key($entry);
+                }
+
+            }else{
+                $key($value);
+            }
+
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('shutdown(): Failed'), $e);
+    }
+}
 ?>

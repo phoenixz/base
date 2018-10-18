@@ -1103,33 +1103,9 @@ function cli_done(){
         }
 
         /*
-         * Do we need to run other shutdown functions?
+         * Execute all shutdown functions
          */
-        foreach($core->register as $key => $value){
-            if(substr($key, 0, 9) !== 'shutdown_'){
-                continue;
-            }
-
-            $key = substr($key, 9);
-
-            /*
-             * Execute this shutdown function with the specified value
-             */
-            log_console(tr('cli_done(): Executing shutdown function ":function" with value ":value"', array(':function' => $key, ':value' => $value)), 'VERBOSE/cyan');
-
-            if(is_array($value)){
-                /*
-                 * Shutdown function value is an array. Execute it for each entry
-                 */
-                foreach($value as $entry){
-                    $key($entry);
-                }
-
-            }else{
-                $key($value);
-            }
-
-        }
+        shutdown();
 
         if(QUIET){
             return false;

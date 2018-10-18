@@ -60,6 +60,13 @@ load_libs(',http,html,inet,cache'.(empty($_CONFIG['memcached']) ? '' : ',memcach
 
 
 /*
+ * All scripts will execute http_done() automatically once done
+ */
+register_shutdown_function('http_done');
+
+
+
+/*
  * Check OPTIONS request.
  * If options was requested, just return basic HTTP headers
  */
