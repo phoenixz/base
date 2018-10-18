@@ -464,7 +464,7 @@ function user_authenticate($username, $password, $captcha = null){
                                ':username' => $username));
 
         if(!$user){
-            log_database(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'authentication/notfound');
+            log_database(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'authentication/not-found');
             throw new bException(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'not-found');
         }
 
@@ -533,7 +533,7 @@ function user_authenticate($username, $password, $captcha = null){
             /*
              * This check will only do anything if the users table contains the "type" column. If it doesn't, nothing will ever happen here, really
              */
-            log_database(tr('user_authenticate(): Specified user account ":username" has status ":type" and cannot be authenticated', array(':username' => str_log($username), ':type' => str_log($user['type']))), 'authentication/notfound');
+            log_database(tr('user_authenticate(): Specified user account ":username" has status ":type" and cannot be authenticated', array(':username' => str_log($username), ':type' => str_log($user['type']))), 'authentication/not-found');
             throw new bException(tr('user_authenticate(): Specified user account has status ":type" and cannot be authenticated', array(':type' => $user['type'])), 'type');
         }
 
