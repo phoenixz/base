@@ -136,14 +136,18 @@ try{
          *
          */
         try{
-// lgr2mpet49dib31m12bjgka104
             if(isset($_COOKIE['base'])){
-                if(!preg_match('/[a-z0-9]+/', $_COOKIE['base'])){
-                     log_file(tr('Received invalid cookie ":cookie", dropping', array(':cookie' => $_COOKIE['base'])), 'warning');
-                     unset($_COOKIE['base']);
-                }
+                if(!is_string($_COOKIE['base']) or !preg_match('/[a-z0-9]{1,128}/i', $_COOKIE['base'])){
+                    log_file(tr('Received invalid cookie ":cookie", dropping', array(':cookie' => $_COOKIE['base'])), 'warning');
+                    unset($_COOKIE['base']);
+                    $_POST = array();
 
-                if(!file_exists(ROOT.'data/cookies/sess_'.$_COOKIE['base'])){
+					/*
+					 * Start a new session without a cookie
+					 */
+					session_start();
+
+                }elseif(!file_exists(ROOT.'data/cookies/sess_'.$_COOKIE['base'])){
                     /*
                      * Start a session with a non-existing cookie. Rename our
                      * session after the cookie, as deleting the cookie from the
