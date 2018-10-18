@@ -10,6 +10,28 @@
 
 
 
+/*
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package ssh
+ *
+ * @return void
+ */
+function googlemaps_library_init(){
+    try{
+        load_config('googlemaps');
+
+    }catch(Exception $e){
+        throw new bException('googlemaps_library_init(): Failed', $e);
+    }
+}
+
+
+
 /**
  *
  * @author Camilo Rodriguez <crodriguez@capmega.com>
@@ -29,8 +51,7 @@ function googlemaps_basic($latitude = null, $longitude = null, $zoom = 8, $api_k
 
     try{
         if(!$api_key){
-           // $api_key = $_CONFIG['google']['maps']['api_key'];
-           $api_key = 'AIzaSyBrRXoEoGO9aN21d39kzW3nnLKivn5nh3o';
+            $api_key = $_CONFIG['google']['maps']['api_key'];
         }
 
         html_load_js('https://maps.googleapis.com/maps/api/js?key='.$api_key);
