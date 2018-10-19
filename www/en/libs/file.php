@@ -529,15 +529,21 @@ function file_get_extension($filename){
 /*
  * Return a temporary filename for the specified file in the specified path
  */
-function file_temp($create = true){
+function file_temp($create = true, $name = null){
     try{
         file_ensure_path(TMP);
 
-        if($create){
-            return tempnam(TMP, '');
+        if(!$name){
+            $name = substr(hash('sha1', uniqid().microtime()), 0, 12);
         }
 
-        return TMP.substr(hash('sha1', uniqid().microtime()), 0, 12);
+		file_delete(TMP.$name);
+
+        if($create){
+            touch(TMP.$name);
+        }
+
+        return TMP.$name;
 
     }catch(Exception $e){
         throw new bException('file_temp(): Failed', $e);
