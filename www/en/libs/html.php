@@ -1276,7 +1276,7 @@ function html_select($params){
 
     try{
         array_params ($params);
-        array_default($params, 'class'       , '');
+        array_default($params, 'class'       , 'form-control');
         array_default($params, 'option_class', '');
         array_default($params, 'disabled'    , false);
         array_default($params, 'name'        , '');
@@ -1284,7 +1284,8 @@ function html_select($params){
         array_default($params, 'none'        , tr('None selected'));
         array_default($params, 'empty'       , tr('None available'));
         array_default($params, 'option_class', '');
-        array_default($params, 'extra'       , '');
+        array_default($params, 'tabindex'    , 0);
+        array_default($params, 'extra'       , 'tabindex="'.$params['tabindex'].'"');
         array_default($params, 'selected'    , null);
         array_default($params, 'bodyonly'    , false);
         array_default($params, 'autosubmit'  , false);
@@ -1292,7 +1293,6 @@ function html_select($params){
         array_default($params, 'hide_empty'  , false);
         array_default($params, 'autofocus'   , false);
         array_default($params, 'multiple'    , false);
-        array_default($params, 'tabindex'    , 0);
 
         if(!$params['name']){
             throw new bException(tr('html_select(): No name specified'), 'not-specified');
@@ -2272,30 +2272,30 @@ function html_fix_checkbox_values(){
 
 
 /*
+ * Returns an HTML <form> tag with (if configured so) a hidden CSRF variable
+ * attached
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package html
+ *
+ * @param string $action The URL where the post should be sent to
+ * @param string $method
+ * @param string $name
+ * @param string $class
+ * @param string $extra
+ * @param boolean $csrf_check
+ * @return string the HTML <form> tag
  */
-function html_form($action, $method, $class, $name = 'form', $csrf_check = true){
+function html_form($action = null, $method = 'post', $name = 'form', $class = 'form-horizontal', $extra = '', $csrf_check = true){
     try{
-        /*
-         * Avoid people fucking around
-         */
-        if(isset($_SESSION['csrf']) and (count($_SESSION['csrf']) >= 20)){
-            /*
-             * Too many csrf, so too many post requests open. Just dump all and
-             * start from scratch
-             */
-            array_shift($_SESSION['csrf']);
+        if(!$action){
+            $action = domain(true);
         }
 
-        if($csrf_check){
-            $csrf = set_csrf();
-            $csrf = '<input type="hidden" name="csrf" value="'.$csrf.'">';
-
-        }else{
-            $csrf = '';
-        }
-
-        foreach(array('name', 'method', 'action', 'class') as $key){
+        foreach(array('name', 'method', 'action', 'class', 'extra') as $key){
             if(!$$key) continue;
             $keys[] = $key.'="'.$$key.'"';
         }
@@ -2309,7 +2309,12 @@ function html_form($action, $method, $class, $name = 'form', $csrf_check = true)
             throw new bException(tr('html_form(): No variables specified'), 'not-specified');
         }
 
-        $form = '<form '.implode(' ', $keys).'>'.$csrf;
+        $form = '<form '.implode(' ', $keys).'>';
+
+        if($csrf_check){
+            $csrf  = set_csrf();
+            $form .= '<input type="hidden" name="csrf" value="'.$csrf.'">';
+        }
 
         return $form;
 
