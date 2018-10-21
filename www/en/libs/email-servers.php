@@ -44,71 +44,57 @@ function email_servers_library_init(){
  * @category Function reference
  * @package categories
  *
- * @param array $params The parameters required
- * @paramkey $params name
- * @paramkey $params class
- * @paramkey $params extra
- * @paramkey $params tabindex
- * @paramkey $params empty
- * @paramkey $params none
- * @paramkey $params selected
- * @paramkey $params parents_id
- * @paramkey $params status
- * @paramkey $params orderby
- * @paramkey $params resource
- * @return string HTML for a categories select box within the specified parameters
+ * @param params $params The parameters required
+ * @params natural id The database table id for the specified email server, if not new
+ * @params string server_seodomain
+ * @params string domain
+ * @params string description
+ * @return The specified email server, validated
  */
 function email_servers_validate($email_server){
     try{
-        load_libs('validate,seo');
+        load_libs('validate,seo,domains,servers');
 
-        $v = new validate_form($email_server, 'id,server_seohostname,domain,smtp_port,imap,poll_interval,header,footer,description');
+        $v = new validate_form($email_server, 'id,domain,server_seodomain,description');
+        $v->isNotEmpty($email_server['server_seodomain'], tr('Please specify a server'));
+        $v->isNotEmpty($email_server['domain'], tr('Please specify a domain'));
 
-        $email_server['domains_id'] = null;
+        /*
+         * Validate the server
+         */
+        $server = servers_get($email_server['server_seodomain'], false, true, true);
 
-        if($email_server['server_seohostname']){
-            load_libs('servers');
-            $server = servers_get($email_server['server_seohostname'], false, true, true);
-
-            if(!$server){
-                $v->setError(tr('The specified server ":server" does not exist', array(':server' => $email_server['seohostname'])));
-            }
-
-            $email_server['servers_id'] = $server['id'];
-
-        }else{
-            $email_server['servers_id'] = null;
+        if(!$server){
+            $v->setError(tr('The specified server ":server" does not exist', array(':server' => $email_server['server_seodomain'])));
         }
 
-        if($email_server['smtp_port']){
-            $v->isBetween($email_server['smtp_port'], 1, 65535, tr('Please specify a valid SMTP port'));
+        $email_server['servers_id'] = $server['id'];
+
+        /*
+         * Validate the domain
+         */
+        $email_server['domains_id'] = domains_ensure($email_server['domain']);
+
+        /*
+         * Validate the rest
+         */
+        if($email_server['description']){
+            $v->hasMinChars($email_server['description'], 16, tr('Please specify at least 16 characters for a description'));
+            $v->hasMaxChars($email_server['description'], 2048, tr('Please specify no more than 2047 characters for a description'));
 
         }else{
-            $email_server['smtp_port'] = 0;
+            $email_server['description'] = null;
         }
-
-        if($email_server['imap']){
-            $v->hasMaxChars($email_server['imap'], 160, tr('Please specify a valid IMAP string'));
-//            $v->isAlphaNumeric($email_server['imap'], tr('Please specify a valid IMAP string'));
-
-        }else{
-            $email_server['imap'] = '';
-        }
-
-        $email_server['header']      = '';
-        $email_server['footer']      = '';
-        $email_server['description'] = '';
-// :IMPLEMENT:
 
         $v->isValid();
 
-        $exists = sql_get('SELECT `id` FROM `email_servers` WHERE `hostname` = :hostname LIMIT 1', true, array(':hostname' => $email_server['hostname']));
+        $exists = sql_get('SELECT `id` FROM `email_servers` WHERE `domain` = :domain AND `id` != :id LIMIT 1', true, array(':domain' => $email_server['domain'], ':id' => isset_get($email_server['id'], 0)));
 
         if($exists){
-            $v->setError(tr('The hostname ":hostname" is already registered'. array(':hostname' => $email_server['hostname'])));
+            $v->setError(tr('The domain ":domain" is already registered', array(':domain' => $email_server['domain'])));
         }
 
-        $email_server['seohostname'] = seo_unique($email_server['hostname'], 'email_servers', $email_server['id'], 'seohostname');
+        $email_server['seodomain'] = seo_unique($email_server['domain'], 'email_servers', $email_server['id'], 'seodomain');
 
         $v->isValid();
 
@@ -179,7 +165,17 @@ function emails_servers_validate_domain($domain){
         return $domain;
 
     }catch(Exception $e){
-        throw new bException(tr('email_domains_validate(): Failed'), $e);
+        if($e->getCode() == '1049'){
+            load_libs('servers');
+
+            $servers  = servers_list_domains($domain['server']);
+            $server   = servers_get($domain['server']);
+            $domain = not_empty($servers[$domain['server']], $domain['server']);
+
+            throw new bException(tr('emails_servers_validate_domain(): Specified email server ":server" (server domain ":domain") does not have a "mail" database', array(':server' => $domain, ':domain' => $server['domain'])), 'not-exist');
+        }
+
+        throw new bException(tr('emails_servers_validate_domain(): Failed'), $e);
     }
 }
 
@@ -213,7 +209,7 @@ function emails_servers_validate_domain($domain){
 function email_servers_select($params = null){
     try{
         array_ensure($params);
-        array_default($params, 'name'    , 'seohostname');
+        array_default($params, 'name'    , 'seodomain');
         array_default($params, 'class'   , 'form-control');
         array_default($params, 'selected', null);
         array_default($params, 'status'  , null);
@@ -221,7 +217,7 @@ function email_servers_select($params = null){
         array_default($params, 'none'    , tr('Select an email server'));
         array_default($params, 'tabindex', 0);
         array_default($params, 'extra'   , 'tabindex="'.$params['tabindex'].'"');
-        array_default($params, 'orderby' , '`hostname`');
+        array_default($params, 'orderby' , '`domain`');
 
         if($params['status'] !== false){
             $where[] = ' `status` '.sql_is($params['status']).' :status ';
@@ -235,7 +231,7 @@ function email_servers_select($params = null){
             $where = ' WHERE '.implode(' AND ', $where).' ';
         }
 
-        $query              = 'SELECT `seohostname`, `hostname` FROM `email_servers` '.$where.' ORDER BY '.$params['orderby'];
+        $query              = 'SELECT `seodomain`, `domain` FROM `email_servers` '.$where.' ORDER BY '.$params['orderby'];
         $params['resource'] = sql_query($query, $execute, 'core');
         $retval             = html_select($params);
 
@@ -270,8 +266,8 @@ function email_servers_get($email_server, $column = null, $status = null){
             $execute[':id'] = $email_server;
 
         }else{
-            $where[] = ' `email_servers`.`seohostname` = :seohostname ';
-            $execute[':seohostname'] = $email_server;
+            $where[] = ' `email_servers`.`seodomain` = :seodomain ';
+            $execute[':seodomain'] = $email_server;
         }
 
         if($status !== false){
@@ -292,8 +288,8 @@ function email_servers_get($email_server, $column = null, $status = null){
                                          `email_servers`.`status`,
                                          `email_servers`.`servers_id`,
                                          `email_servers`.`domains_id`,
-                                         `email_servers`.`hostname`,
-                                         `email_servers`.`seohostname`,
+                                         `email_servers`.`domain`,
+                                         `email_servers`.`seodomain`,
                                          `email_servers`.`smtp_port`,
                                          `email_servers`.`imap`,
                                          `email_servers`.`poll_interval`,
@@ -301,8 +297,8 @@ function email_servers_get($email_server, $column = null, $status = null){
                                          `email_servers`.`footer`,
                                          `email_servers`.`description`,
 
-                                         `servers`.`hostname`    AS `server_hostname`,
-                                         `servers`.`seohostname` AS `server_seohostname`
+                                         `servers`.`domain`    AS `server_domain`,
+                                         `servers`.`seodomain` AS `server_seodomain`
 
                                FROM      `email_servers`
 
