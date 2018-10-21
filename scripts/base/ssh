@@ -24,6 +24,8 @@ COMMANDS                        - (optional) the commands to execute on the
 
 
 
+
+
 ARGUMENTS
 
 -i,--identity-file FILE         - The identity file (private key file) that
@@ -40,6 +42,12 @@ ARGUMENTS
 
 
 METHODS
+
+list [%ACCOUNTNAME%]            - List all registerd server SSH accounts, or by
+                                  part of specified accounts name
+
+show [ACCOUNTNAME]              - Show all details of the specified registerd
+                                  SSH account
 
 register HOSTNAME [SSH-PORT]    - Register the fingerprint for the specified
                                   hostname and port in the ssh_fingerprints
@@ -62,6 +70,83 @@ load_libs('servers');
 
 try{
     switch(cli_method()){
+        case 'list':
+            cli_no_arguments_left();
+
+            $execute  = array();
+            $where    = array();
+            $query    = 'SELECT    `ssh_accounts`.`id`,
+                                   `ssh_accounts`.`createdon`,
+                                   `ssh_accounts`.`createdby`,
+                                   `ssh_accounts`.`status`,
+                                   `ssh_accounts`.`name`,
+                                   `ssh_accounts`.`seoname`,
+                                   `ssh_accounts`.`username`,
+
+                                   `users`.`name`     AS `user_name`,
+                                   `users`.`email`    AS `user_email`,
+                                   `users`.`username` AS `user_username`,
+                                   `users`.`nickname` AS `user_nickname`
+
+                         FROM      `ssh_accounts`
+
+                         LEFT JOIN `users`
+                         ON        `users`.`id` = `ssh_accounts`.`createdby`';
+
+            if(DELETED){
+                $where[] = ' `ssh_accounts`.`status` = "deleted" ';
+
+            }elseif(!ALL){
+                $where[] = ' `ssh_accounts`.`status` IS NULL ';
+            }
+
+            if(STATUS){
+                $execute = array_merge($execute, sql_in(ALL));
+                $where[] = ' `ssh_accounts`.`status` IN ('.implode(', ', array_keys(ALL)).') ';
+            }
+
+            if(empty($where)){
+                $where = '';
+
+            }else{
+                $where = ' WHERE '.implode(' AND ', $where);
+            }
+
+            $order    = ' ORDER BY `ssh_accounts`.`status` IS NOT NULL DESC ';
+            $accounts = sql_query($query.$where.$order.(LIMIT ? ' LIMIT '.LIMIT : ''), $execute);
+
+            if(!$accounts->rowCount()){
+                    log_console(tr('There are currently no accounts registered'), 'QUIET/yellow');
+
+            }else{
+                log_console(str_size(tr('#id'), 7).str_size(tr('Name'), 33).str_size(tr('User name'), 33).str_size(tr('Status'), 13).str_size(tr('Created by'), 32), 'QUIET/cyan');
+
+                while($account = sql_fetch($accounts)){
+                    log_console(str_size($account['id'], 6, ' ', true).' '.str_size($account['name'], 32).' '.str_size($account['username'], 32).' '.str_size($account['status'], 12).' '.name($account, 'user'));
+                }
+            }
+
+            die();
+
+        case 'show':
+            $account      = cli_argument();
+            $account_data = ssh_get_account($account);
+
+            if(!$account_data){
+                throw new bException(tr('The specified SSH account ":account" does not exist', array(':account' => $account)), 'not-exist');
+            }
+
+            $account_data = array_hide($account_data);
+
+            ksort($account_data);
+
+            foreach($account_data as $key => $value){
+                if($key == 'password') continue;
+                log_console(cli_color($key.':', 'white').' '.json_encode_custom($value));
+            }
+
+            die();
+
         case 'register':
             $hostname = cli_argument(1);
             $port     = cli_argument(2);
