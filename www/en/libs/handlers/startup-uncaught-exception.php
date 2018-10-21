@@ -40,9 +40,15 @@ try{
 
             if(empty($core) or empty($core->register['ready'])){
                 /*
-                 * Configuration hasn't been loaded yet, we cannot even know if we are
-                 * in debug mode or not!
+                 * Configuration hasn't been loaded yet, we cannot even know if
+                 * we are in debug mode or not!
+                 *
+                 * Log to the webserver error log at the very least
                  */
+                foreach($e->getMessages as $message){
+                    error_log($message);
+                }
+
                 echo "\033[1;31mPre ready exception\033[0m\n";
                 print_r($e);
                 die("\033[1;31mPre ready exception\033[0m\n");
@@ -183,6 +189,10 @@ try{
                  */
                 if(!headers_sent()){
                     header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+                }
+
+                foreach($e->getMessages as $message){
+                    error_log($message);
                 }
 
                 die('pre ready exception');
