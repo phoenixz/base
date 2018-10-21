@@ -165,7 +165,7 @@ try{
                      * Foreign key error, get the FK error data from mysql
                      */
                     try{
-                        $fk = sql_fetch(sql_query('SHOW ENGINE INNODB STATUS', null, false), 'Status');
+                        $fk = sql_fetch(sql_query('SHOW ENGINE INNODB STATUS', null, null), 'Status');
                         $fk = str_from ($fk, 'LATEST FOREIGN KEY ERROR');
                         $fk = str_from ($fk, '------------------------');
                         $fk = str_until($fk, '------------');
