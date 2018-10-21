@@ -195,8 +195,10 @@ if($nocopy){
 }else{
     log_console(tr('Copying remote SQL file locally'), 'white');
 
-    passthru('rm '.TMP.$project.'_'.$dumpfile.' '.TMP.$project.'_'.$dumpfile.'.gz -f');
-    passthru($command = 'scp -P '.$deploy_config['target_port'].' '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':/tmp/'.$project.'_'.$dumpfile.'.gz '.TMP.$project.'_'.$dumpfile.'.gz', $exitcode);
+	$temp_file = file_temp(false, $project.'_'.$dumpfile);
+
+    passthru('rm '.$temp_file.' '.$temp_file.'.gz -f');
+    passthru($command = 'scp -P '.$deploy_config['target_port'].' '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].':/tmp/'.$project.'_'.$dumpfile.'.gz '.$temp_file.'.gz', $exitcode);
 
     if($exitcode){
         throw new bException(tr('Copy of remote mysqldump file to local server failed with exit code ":code"', array(':code' => $exitcode)), 'remote');
@@ -216,15 +218,15 @@ if($noimport){
      * mysqldump always adds a "USE databasename" which is horrifyingly anoying, because the dump will be imported in the wrong database!
      * Remove it first!
      */
-    log_console(tr('Preparing remote SQL dump file ":file"', array(':file' => ''.TMP.$project.'_'.$dumpfile)), 'white');
-    passthru($command = 'cd /tmp/; rm '.TMP.$project.'_'.$dumpfile.' -f; gunzip '.TMP.$project.'_'.$dumpfile.'.gz', $exitcode);
+    log_console(tr('Preparing remote SQL dump file ":file"', array(':file' => ''.$temp_file)), 'white');
+    passthru($command = 'cd /tmp/; rm '.$temp_file.' -f; gunzip '.$temp_file.'.gz', $exitcode);
 
     if($exitcode){
         throw new bException(tr('Gunzip of mysqldump file failed with exit code ":code"', array(':code' => $exitcode)), 'gunzip');
     }
 
-    log_console(tr('Importing remote SQL dump file ":file" in local MySQL server', array(':file' => ''.TMP.$project.'_'.$dumpfile)), 'white');
-    passthru($command = 'cd /tmp/; sed -i -e"s/USE \`'.$source_config['db']['core']['db'].'\`;/USE \`'.$_CONFIG['db']['core']['db'].'\`;/" '.TMP.$project.'_'.$dumpfile, $exitcode);
+    log_console(tr('Importing remote SQL dump file ":file" in local MySQL server', array(':file' => ''.$temp_file)), 'white');
+    passthru($command = 'cd /tmp/; sed -i -e"s/USE \`'.$source_config['db']['core']['db'].'\`;/USE \`'.$_CONFIG['db']['core']['db'].'\`;/" '.$temp_file, $exitcode);
 
     if($exitcode){
         throw new bException(tr('Rewrite of "USE DATABASENAME" in mysqldump file failed with exit code ":code"', array(':code' => $exitcode)), 'sql');
@@ -235,7 +237,7 @@ if($noimport){
     sql_query('DROP   DATABASE IF EXISTS `'.$_CONFIG['db']['core']['db'].'`');
     sql_query('CREATE DATABASE `'.$_CONFIG['db']['core']['db'].'`');
 
-    passthru($command = 'cat '.TMP.$project.'_'.$dumpfile.' | mysql -u '.$_CONFIG['db']['core']['user'].' -p"'.$_CONFIG['db']['core']['pass'].'" -B '.$_CONFIG['db']['core']['db'], $exitcode);
+    passthru($command = 'cat '.$temp_file.' | mysql -u '.$_CONFIG['db']['core']['user'].' -p"'.$_CONFIG['db']['core']['pass'].'" -B '.$_CONFIG['db']['core']['db'], $exitcode);
 
     if($exitcode){
         throw new bException(tr('MySQL import of mysqldump file failed with exit code ":code"', array(':code' => $exitcode)), 'mysql');
@@ -252,13 +254,13 @@ if($nodelete){
 
 }else{
     log_console(tr('Removing temporary remote SQL dump file from local and remote server'), 'white');
-    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? ' sudo ' : '').'rm -f '.TMP.$project.'_'.$dumpfile.'*\'', $exitcode);
+    passthru($command = 'ssh -p '.$deploy_config['target_port'].' -t '.($deploy_config['target_user'] ? $deploy_config['target_user'].'@' : '').$deploy_config['target_server'].' \''.($deploy_config['sudo'] ? ' sudo ' : '').'rm -f '.$temp_file.'*\'', $exitcode);
 
     if($exitcode){
         throw new bException(tr('Removal of temporary mysqldump file on remote server failed with exit code ":code"', array(':code' => $exitcode)), 'remote');
     }
 
-    passthru($command = 'rm -f '.TMP.$project.'_'.$dumpfile.'*', $exitcode);
+    passthru($command = 'rm -f '.$temp_file.'*', $exitcode);
 
     if($exitcode){
         throw new bException(tr('Removal of temporary mysqldump file on local server failed with exit code ":code"', array(':code' => $exitcode)), 'remote');
