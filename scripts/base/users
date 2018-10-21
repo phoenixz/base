@@ -566,7 +566,7 @@ switch(cli_method()){
 
                                     array(':roles_id'    => $user['roles_id']));
 
-                log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size(cli_status_color($user['status']), 10).' '.str_size(not_empty($user['role'], '-'), 10).' '.not_empty(str_force($rights, ', '), '-'));
+                log_console(str_size($user['id'], 6, ' ', true).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.cli_status_color(str_size($user['status'], 10)).' '.str_size(not_empty($user['role'], '-'), 10).' '.not_empty(str_force($rights, ', '), '-'));
             }
         }
 
@@ -719,7 +719,7 @@ switch(cli_method()){
             log_console(str_size(tr('#id'), 7).str_size(tr('Status'), 11).str_size(tr('Username'), 13).str_size(tr('Nickname'), 13).str_size(tr('Type'), 11).str_size(tr('Role'), 11).str_size(tr('Admin'), 6).str_size(tr('God'), 4).str_size(tr('Signin count'), 13).str_size(tr('Locked until'), 21).str_size(tr('Auth failures'), 14).str_size(tr('Real name'), 33).str_size(tr('Email'), 33), 'QUIET/cyan');
 
             while($user = sql_fetch($r)){
-                log_console(str_size($user['id'], 6, ' ', true).' '.str_size(cli_status_color($user['status']), 10).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size($user['type'], 10).' '.str_size($user['role'], 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size(($user['god'] ? 'Yes' : ''), 3).' '.str_size($user['signin_count'], 12, ' ', true).' '.str_size($user['locked_until'] ? $user['locked_until'] : '-', 20).' '.str_size($user['auth_fails'] ? $user['auth_fails'] : '-', 13, ' ', true).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32));
+                log_console(str_size($user['id'], 6, ' ', true).' '.cli_status_color(str_size($user['status'], 10)).' '.str_size($user['username'], 12).' '.str_size($user['nickname'], 12).' '.str_size($user['type'], 10).' '.str_size($user['role'], 10).' '.str_size(($user['admin'] ? 'Yes' : ''), 5).' '.str_size(($user['god'] ? 'Yes' : ''), 3).' '.str_size($user['signin_count'], 12, ' ', true).' '.str_size($user['locked_until'] ? $user['locked_until'] : '-', 20).' '.str_size($user['auth_fails'] ? $user['auth_fails'] : '-', 13, ' ', true).' '.str_size($user['name'], 32).' '.str_size($user['email'], 32));
             }
         }
 
