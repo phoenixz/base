@@ -11,8 +11,11 @@
  * amp
  * system
  *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@capmega.com>, Johan Geuze
+ * @category Function reference
+ * @package startup
  */
 
 
@@ -20,7 +23,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '1.21.3');
+define('FRAMEWORKCODEVERSION', '1.22.0');
 define('PHP_MINIMUM_VERSION' , '5.5.9');
 
 
@@ -2376,6 +2379,17 @@ function set_csrf($prefix = ''){
             return false;
         }
 
+        /*
+         * Avoid people messing around
+         */
+        if(isset($_SESSION['csrf']) and (count($_SESSION['csrf']) >= 20)){
+            /*
+             * Too many csrf, so too many post requests open. Remove the oldest
+             * CSRF code and add a new one
+             */
+            array_shift($_SESSION['csrf']);
+        }
+
         $csrf = $prefix.unique_code('sha256');
 
         if(empty($_SESSION['csrf'])){
@@ -2471,7 +2485,12 @@ function check_csrf(){
         /*
          * CSRF check failed, drop $_POST
          */
-        unset($_POST);
+        foreach($_POST as $key => $value){
+            if(substr($key, -6, 6) === 'submit'){
+                unset($_POST[$key]);
+            }
+        }
+
         log_file($e);
         html_flash_set(tr('The form data was too old, please try again'), 'warning');
     }
@@ -2627,7 +2646,17 @@ function unique_code($hash = 'sha512'){
 
 
 /*
- * Return deploy configuration for the specified environment
+ * Returns the configuration array from the specified file and specified environment
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package startup
+ *
+ * @param string $file
+ * @param string $environment
+ * @return array The requested configuration array
  */
 function get_config($file = null, $environment = null){
     try{
@@ -2635,25 +2664,28 @@ function get_config($file = null, $environment = null){
             $environment = ENVIRONMENT;
         }
 
-        $_CONFIG = array('deploy' => array());
-
-        if($file){
-            $file = '_'.$file;
-
-            if(file_exists(ROOT.'config/'.$file.'.php')){
-                include(ROOT.'config/'.$file.'.php');
-            }
+        if($file === 'deploy'){
+            include(ROOT.'config/deploy.php');
 
         }else{
-            include(ROOT.'config/base/default.php');
-        }
+            if($file){
+                $file = '_'.$file;
 
-        if(file_exists(ROOT.'config/production'.$file.'.php')){
-            include(ROOT.'config/production'.$file.'.php');
-        }
+                if(file_exists(ROOT.'config/'.$file.'.php')){
+                    include(ROOT.'config/'.$file.'.php');
+                }
 
-        if(file_exists(ROOT.'config/'.$environment.$file.'.php')){
-            include(ROOT.'config/'.$environment.$file.'.php');
+            }else{
+                include(ROOT.'config/base/default.php');
+            }
+
+            if(file_exists(ROOT.'config/production'.$file.'.php')){
+                include(ROOT.'config/production'.$file.'.php');
+            }
+
+            if(file_exists(ROOT.'config/'.$environment.$file.'.php')){
+                include(ROOT.'config/'.$environment.$file.'.php');
+            }
         }
 
         return $_CONFIG;

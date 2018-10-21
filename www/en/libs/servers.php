@@ -4,8 +4,11 @@
  *
  * This library contains functions to manage registered servers
  *
- * @copyright (c) 2018 Capmega
- * @author Sven Olaf Oostenbrink
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
  */
 
 
@@ -23,7 +26,7 @@
  */
 function servers_library_init(){
     try{
-        load_libs('ssh');
+        load_libs('ssh,domains');
         load_config('servers');
 
     }catch(Exception $e){
@@ -53,7 +56,7 @@ function servers_validate($server, $structure_only = false, $password_strength =
     try{
         load_libs('validate,file,seo,customers,providers');
 
-        $v = new validate_form($server, 'id,ipv4,ipv6,port,hostname,hostnames,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id,bill_duedate,cost,interval,allow_sshd_modification,register');
+        $v = new validate_form($server, 'id,ipv4,ipv6,port,domain,domains,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id,bill_duedate,cost,interval,allow_sshd_modification,register');
 
         if($structure_only){
             return $server;
@@ -78,15 +81,15 @@ function servers_validate($server, $structure_only = false, $password_strength =
         }
 
         /*
-         * Hostname
+         * Domain
          */
-        $v->isNotEmpty($server['hostname'], tr('Please specifiy a hostname'));
-        $v->isDomain($server['hostname'], tr('The hostname ":hostname" is invalid', array(':hostname' => $server['hostname'])));
+        $v->isNotEmpty($server['domain'], tr('Please specifiy a domain'));
+        $v->isDomain($server['domain'], tr('The domain ":domain" is invalid', array(':domain' => $server['domain'])));
 
         if(!empty($server['url']) and !FORCE){
-            $v->setError(tr('Both hostname ":hostname" and URL ":url" specified, please specify one or the other', array(':hostname' => $server['hostname'], ':url' => $server['url'])));
+            $v->setError(tr('Both domain ":domain" and URL ":url" specified, please specify one or the other', array(':domain' => $server['domain'], ':url' => $server['url'])));
 
-        }elseif(!preg_match('/[a-z0-9][a-z0-9-.]+/', $server['hostname'])){
+        }elseif(!preg_match('/[a-z0-9][a-z0-9-.]+/', $server['domain'])){
             $v->setError(tr('Invalid server specified, be sure it contains only a-z, 0-9, . and -'));
         }
 
@@ -116,7 +119,7 @@ function servers_validate($server, $structure_only = false, $password_strength =
             /*
              * IP not specified, try to lookup
              */
-            $server['ipv4'] = gethostbynamel($server['hostname']);
+            $server['ipv4'] = gethostbynamel($server['domain']);
 
             if(!$server['ipv4']){
                 $server['ipv4'] = null;
@@ -145,29 +148,20 @@ function servers_validate($server, $structure_only = false, $password_strength =
 
         $server['allow_sshd_modification'] = (boolean) $server['allow_sshd_modification'];
 
-        if($server['hostnames']){
-            $server['hostnames'] = array_force($server['hostnames'], "\n");
+        if($server['domains']){
+            $server['domains'] = array_force($server['domains'], "\n");
 
-            foreach($server['hostnames'] as &$hostname){
-                $hostname = trim($hostname);
-                $v->isDomain($hostname, tr('The hostname ":hostname" is invalid', array(':hostname' => $hostname)));
+            foreach($server['domains'] as &$domain){
+                $domain = trim($domain);
+                $v->isDomain($domain, tr('The domain ":domain" is invalid', array(':domain' => $domain)));
+
+                $domain = domains_ensure($domain, 'domain');
             }
 
             $v->isValid();
 
-            /*
-             * Ensure that the specified hostnames do not yet exist
-             */
-            foreach($server['hostnames'] as &$hostname){
-                $exists = sql_get('SELECT `id` FROM `servers_hostnames` WHERE `servers_id` != :servers_id AND `hostname` = :hostname', true, array(':servers_id' => $server['id'], ':hostname' => $hostname), 'core');
-
-                if($exists){
-                    $v->setError(tr('Specified hostname ":hostname" already exists', array(':hostname' => $server['hostname'])));
-                }
-            }
-
-            $server['hostnames'][] = $server['hostname'];
-            $server['hostnames']   = array_unique($server['hostnames']);
+            $server['domains'][] = domains_ensure($server['domain'], 'domain');
+            $server['domains']   = array_unique($server['domains']);
         }
 
         $v->isValid();
@@ -212,13 +206,13 @@ function servers_validate($server, $structure_only = false, $password_strength =
         /*
          * Already exists?
          */
-        $exists = sql_get('SELECT `id` FROM `servers` WHERE `hostname` = :hostname AND `ssh_accounts_id` '.sql_is($server['ssh_accounts_id']).' :ssh_accounts_id AND `id` != :id LIMIT 1', true, array(':hostname' => $server['hostname'], ':ssh_accounts_id' => $server['ssh_accounts_id'], ':id' => isset_get($server['id'], 0)), 'core');
+        $exists = sql_get('SELECT `id` FROM `servers` WHERE `domain` = :domain AND `id` != :id LIMIT 1', true, array(':domain' => $server['domain'], ':id' => isset_get($server['id'], 0)), 'core');
 
         if($exists){
-            $v->setError(tr('A server with hostname ":hostname" and SSH account ":ssh_account" already exists', array(':hostname' => $server['hostname'], ':ssh_account' => $server['ssh_account'])));
+            $v->setError(tr('A server with domain ":domain" already exists', array(':domain' => $server['domain'])));
         }
 
-        $server['seohostname']  = seo_unique($server['hostname'], 'servers', isset_get($server['id']), 'seohostname');
+        $server['seodomain']    = seo_unique($server['domain'], 'servers', isset_get($server['id']), 'seodomain');
         $server['bill_duedate'] = date_convert($server['bill_duedate'], 'mysql');
 
         $v->isValid();
@@ -248,14 +242,14 @@ function servers_insert($server){
     try{
         $server = servers_validate($server);
 
-        sql_query('INSERT INTO `servers` (`createdby`, `meta_id`, `status`, `hostname`, `seohostname`, `port`, `database_accounts_id`, `bill_duedate`, `cost`, `interval`, `providers_id`, `customers_id`, `ssh_accounts_id`, `allow_sshd_modification`, `description`, `ipv4`)
-                   VALUES                (:createdby , :meta_id , :status , :hostname , :seohostname , :port , :database_accounts_id , :bill_duedate , :cost , :interval , :providers_id , :customers_id , :ssh_accounts_id , :allow_sshd_modification , :description , :ipv4)',
+        sql_query('INSERT INTO `servers` (`createdby`, `meta_id`, `status`, `domain`, `seodomain`, `port`, `database_accounts_id`, `bill_duedate`, `cost`, `interval`, `providers_id`, `customers_id`, `ssh_accounts_id`, `allow_sshd_modification`, `description`, `ipv4`)
+                   VALUES                (:createdby , :meta_id , :status , :domain , :seodomain , :port , :database_accounts_id , :bill_duedate , :cost , :interval , :providers_id , :customers_id , :ssh_accounts_id , :allow_sshd_modification , :description , :ipv4)',
 
                    array(':status'                  => ($server['ssh_accounts_id'] ? 'testing' : null),
                          ':createdby'               => isset_get($_SESSION['user']['id']),
                          ':meta_id'                 => meta_action(),
-                         ':hostname'                => $server['hostname'],
-                         ':seohostname'             => $server['seohostname'],
+                         ':domain'                => $server['domain'],
+                         ':seodomain'             => $server['seodomain'],
                          ':port'                    => $server['port'],
                          ':database_accounts_id'    => $server['database_accounts_id'],
                          ':cost'                    => $server['cost'],
@@ -271,9 +265,10 @@ function servers_insert($server){
         $server['id'] = sql_insert_id();
 
         if($server['register']){
-            ssh_add_known_host($server['hostname'], $server['port']);
+            ssh_add_known_host($server['domain'], $server['port']);
         }
 
+        servers_update_domains($server['id'], $server['domains']);
         return $server;
 
     }catch(Exception $e){
@@ -303,8 +298,8 @@ function servers_update($server){
         sql_query('UPDATE `servers`
 
                    SET    `status`                  = :status,
-                          `hostname`                = :hostname,
-                          `seohostname`             = :seohostname,
+                          `domain`                = :domain,
+                          `seodomain`             = :seodomain,
                           `port`                    = :port,
                           `database_accounts_id`    = :database_accounts_id,
                           `cost`                    = :cost,
@@ -321,8 +316,8 @@ function servers_update($server){
 
                    array(':id'                      => $server['id'],
                          ':status'                  => ($server['ssh_accounts_id'] ? 'testing' : null),
-                         ':hostname'                => $server['hostname'],
-                         ':seohostname'             => $server['seohostname'],
+                         ':domain'                => $server['domain'],
+                         ':seodomain'             => $server['seodomain'],
                          ':port'                    => $server['port'],
                          ':database_accounts_id'    => $server['database_accounts_id'],
                          ':cost'                    => $server['cost'],
@@ -335,6 +330,7 @@ function servers_update($server){
                          ':description'             => $server['description'],
                          ':ipv4'                    => $server['ipv4']));
 
+        servers_update_domains($server['id'], $server['domains']);
         return $server;
 
     }catch(Exception $e){
@@ -345,7 +341,7 @@ function servers_update($server){
 
 
 /*
- * Returns an array with all hostnames that are like the specified hostname
+ * Returns an array with all servers that are like the specified domain
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -353,23 +349,42 @@ function servers_update($server){
  * @provider Function reference
  * @package servers
  *
- * @param string $hostname The hostname section that is being searched for
- * @return array The list of hostnames that was found
+ * @param string $domain The domain section that is being searched for
+ * @return array The list of servers that have a domain that appears like the specified domain
  */
-function servers_like($hostname){
+function servers_like($domain){
     try{
-        $server = sql_get('SELECT `hostname`
+        $server = sql_get('SELECT `domain`
 
-                           FROM   `servers_hostnames`
+                           FROM   `servers`
 
-                           WHERE  `hostname`    LIKE :hostname
-                           OR     `seohostname` LIKE :seohostname',
+                           WHERE  `domain`    LIKE :domain
+                           OR     `seodomain` LIKE :seodomain',
 
-                           true, array(':hostname'    => '%'.$hostname.'%',
-                                       ':seohostname' => '%'.$hostname.'%'));
+                           true, array(':domain'    => '%'.$domain.'%',
+                                       ':seodomain' => '%'.$domain.'%'));
 
         if(!$server){
-            throw new bException(tr('servers_like(): Specified server ":server" does not exist', array(':server' => $hostname)), 'not-exist');
+            /*
+             * Specified server not found in the default servers list, try domains list
+             */
+            $server = sql_get('SELECT `servers`.`domain`
+
+                               FROM   `domains`
+
+                               JOIN   `domains_servers`
+                               ON    (`domains`.`domain` LIKE :domain OR `domains`.`seodomain` LIKE :seodomain)
+                               AND    `domains_servers`.`domains_id` = `domains`.`id`
+
+                               JOIN   `servers`
+                               ON     `servers`.`id` = `domains_servers`.`servers_id`',
+
+                               array(':domain'    => '%'.$domain.'%',
+                                     ':seodomain' => '%'.$domain.'%'));
+
+            if(!$server){
+                throw new bException(tr('servers_like(): Specified server ":server" does not exist', array(':server' => $domain)), 'not-exist');
+            }
         }
 
         return $server;
@@ -417,7 +432,7 @@ function servers_select($params = null){
         array_default($params, 'none'    , tr('Select a server'));
         array_default($params, 'tabindex', 0);
         array_default($params, 'extra'   , 'tabindex="'.$params['tabindex'].'"');
-        array_default($params, 'orderby' , '`hostname`');
+        array_default($params, 'orderby' , '`domain`');
 
         if($params['status'] !== false){
             $where[] = ' `status` '.sql_is($params['status']).' :status ';
@@ -431,7 +446,7 @@ function servers_select($params = null){
             $where = ' WHERE '.implode(' AND ', $where).' ';
         }
 
-        $query              = 'SELECT `seohostname`, CONCAT(`hostname`, " (", `ipv4`, ")") AS `name` FROM `servers` '.$where.' ORDER BY '.$params['orderby'];
+        $query              = 'SELECT `seodomain`, CONCAT(`domain`, " (", `ipv4`, ")") AS `name` FROM `servers` '.$where.' ORDER BY '.$params['orderby'];
         $params['resource'] = sql_query($query, $execute, 'core');
         $retval             = html_select($params);
 
@@ -445,7 +460,7 @@ function servers_select($params = null){
 
 
 /*
- * Update the hostnames list for the specified server
+ * Update the domains list for the specified server
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -453,33 +468,158 @@ function servers_select($params = null){
  * @category Function reference
  * @package servers
  *
- * @param integer $servers_id
- * @param array $hostnames
- *
- * @return integer The amount of hostnames added
+ * @param mixed $server The server for which the specified domains should be linked. May be specified by id, domain, seodomain, or servers array
+ * @param array $domains The domains which will be linked to the specified server. May be specified by id, domain, seodomain, or domains array
+ * @return The amount of domains added for the server
  */
-function servers_update_hostnames($servers_id, $hostnames){
+function servers_update_domains($server, $domains){
     try{
-        sql_query('DELETE FROM `servers_hostnames` WHERE `servers_id` = :servers_id', array(':servers_id' => $servers_id), 'core');
+        $server = servers_get_id($server);
 
-        if(!$hostnames){
+        sql_query('DELETE FROM `domains_servers` WHERE `servers_id` = :servers_id', array(':servers_id' => $server));
+
+        if(empty($domains)){
             return false;
         }
 
-        $insert  = sql_prepare('INSERT INTO `servers_hostnames` (`meta_id`, `servers_id`, `hostname`, `seohostname`)
-                                VALUES                          (:meta_id , :servers_id , :hostname , :seohostname )', 'core');
+        $insert = sql_prepare('INSERT INTO `domains_servers` (`createdby`, `meta_id`, `domains_id`, `servers_id`)
+                               VALUES                        (:createdby , :meta_id , :domains_id , :servers_id )');
 
-        foreach($hostnames as $hostname){
-            $insert->execute(array(':meta_id'     => meta_action(),
-                                   ':servers_id'  => $servers_id,
-                                   ':hostname'    => $hostname,
-                                   ':seohostname' => seo_unique($hostname, 'servers_hostnames', null, 'seohostname')));
+        foreach($domains as $domain){
+            $insert->execute(array(':meta_id'    => meta_action(),
+                                   ':createdby'  => isset_get($_SESSION['user']['id']),
+                                   ':servers_id' => $server,
+                                   ':domains_id' => domains_get_id($domain)));
         }
 
-        return count($hostnames);
+        return count($domains);
 
     }catch(Exception $e){
-        throw new bException('servers_update_hostnames(): Failed', $e);
+        throw new bException('servers_update_domains(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Add the specified domain to the specified server
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param mixed $server The server to which the domain must be linked. May be specified by id, domain, seodomain, or servers array
+ * @param mixed $domain The domain to which the server must be linked. May be specified by id, domain, seodomain, or domains array
+ *
+ * @return boolean True if domain was added, false if it already existed
+ */
+function servers_add_domain($server, $domain){
+    try{
+        $server = servers_get_id($server);
+        $domain = domains_get_id($domain);
+        $exists = sql_get('SELECT `id` FROM `domains_servers` WHERE `servers_id` = :servers_id AND `domains_id` = :domains_id', array(':servers_id' => $server, ':domains_id' => $domain));
+
+        if($exists){
+            return false;
+        }
+
+        sql_query('INSERT INTO `domains_servers` (`createdby`, `meta_id`, `servers_id`, `domains_id`)
+                   VALUES                        (:createdby , :meta_id , :servers_id , :domains_id )',
+
+                   array('createdby'   => isset_get($_SESSION['user']['id']),
+                         'meta_id'     => meta_action(),
+                         'servers_id'  => $server,
+                         'domains_id'  => $domain), 'core');
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('servers_add_domain(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Remove the specified domain from either the specified servers_id or from all servers
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param mixed $domain The domain to be linked to the server. May be specified by id, domain, or domains array
+ * @param mixed $server The server to be linked to the domain. May be specified by id, domain, or servers array
+ *
+ * @return integer Amount of deleted domains
+ */
+function servers_remove_domain($server, $domain){
+    try{
+        $server = servers_get_id($server);
+        $domain = domains_get_id($domain);
+
+        if($server){
+            if($domain){
+                $r = sql_query('DELETE FROM `domains_servers` WHERE `servers_id` = :servers_id AND `domains_id` = :domains_id', array(':domains_id' => $domain, ':servers_id' => $server));
+
+            }else{
+                $r = sql_query('DELETE FROM `domains_servers` WHERE `servers_id` = :servers_id', array(':servers_id' => $server));
+            }
+
+        }else{
+            if($domain){
+                $r = sql_query('DELETE FROM `domains_servers` WHERE `domains_id` = :domains_id', array(':domains_id' => $domain));
+
+            }else{
+                throw new bException(tr('servers_remove_domain(): Neither $domain not $server specified. At least one must be specified'), 'not-specified');
+            }
+        }
+
+        return sql_num_rows($r);
+
+    }catch(Exception $e){
+        throw new bException('servers_remove_domain(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * List all linked domains for the specified server
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param mixed $server The server for which the domains must be returned. May be specified by id, domain, seodomain, or servers array
+ * @return array The domains for the specified server
+ */
+function servers_list_domains($server){
+    try{
+        $server  = servers_get_id($server);
+        $results = sql_list('SELECT   `domains`.`seodomain`,
+                                      `domains`.`domain`
+
+                             FROM     `domains_servers`
+
+                             JOIN     `domains`
+                             ON       `domains_servers`.`servers_id` = :servers_id
+                             AND      `domains_servers`.`domains_id` = `domains`.`id`
+                             AND      `domains`.`status`             IS NULL
+
+                             ORDER BY `domains`.`domain` ASC',
+
+                             array(':servers_id' => $server), false, 'core');
+
+        return $results;
+
+    }catch(Exception $e){
+        throw new bException('servers_list_domains(): Failed', $e);
     }
 }
 
@@ -488,7 +628,7 @@ function servers_update_hostnames($servers_id, $hostnames){
 /*
  * Execute the specified commands on the specified server using ssh_exec() and return the results.
  *
- * If server is specified as an array, servers_exec() will assume the server data is available and send it directly to ssh_exec(). If server is specified as a string or integer, servers_exec() will look up the server in the database by either servers_id or hostname, and if found, use that server data to send the commands to ssh_exec()
+ * If server is specified as an array, servers_exec() will assume the server data is available and send it directly to ssh_exec(). If server is specified as a string or integer, servers_exec() will look up the server in the database by either servers_id or domain, and if found, use that server data to send the commands to ssh_exec()
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -505,7 +645,7 @@ function servers_update_hostnames($servers_id, $hostnames){
  */
 function servers_exec($server, $commands = null, $background = false, $function = null){
     try{
-        array_params($server, 'hostname');
+        array_params($server, 'domain');
         array_default($server, 'hostkey_check', true);
         array_default($server, 'background'   , $background);
         array_default($server, 'commands'     , $commands);
@@ -514,7 +654,7 @@ function servers_exec($server, $commands = null, $background = false, $function 
 
         if(empty($server['identity_file'])){
             if(empty($server['ssh_key'])){
-                throw new bException(tr('servers_exec(): The specified server ":server" has no identity file or SSH key available', array(':server' => $server['hostname'])), 'missing-data');
+                throw new bException(tr('servers_exec(): The specified server ":server" has no identity file or SSH key available', array(':server' => $server['domain'])), 'missing-data');
             }
 
             /*
@@ -554,7 +694,7 @@ function servers_exec($server, $commands = null, $background = false, $function 
 
 
 /*
- * Add SSH fingerprint all hostnames / ports for the specified server
+ * Add SSH fingerprint all domains / ports for the specified server
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -563,16 +703,16 @@ function servers_exec($server, $commands = null, $background = false, $function 
  * @package servers
  *
  * @param mixed $server
- * @return array The database entry data for the requested hostname
+ * @return array The database entry data for the requested domain
  */
 function servers_register_host($server){
     try{
         $server    = servers_get($server);
-        $hostnames = servers_get_hostnames($server);
+        $domains = servers_list_domains($server);
 
-        foreach($hostnames as $hostname){
-            $server  = servers_get($hostname);
-            $entries = ssh_add_known_host($server['hostname'], $server['port']);
+        foreach($domains as $domain){
+            $server  = servers_get($domain);
+            $entries = ssh_add_known_host($server['domain'], $server['port']);
 
             if($entries){
                 $retval = array_merge($entries, $entries);
@@ -589,7 +729,7 @@ function servers_register_host($server){
 
 
 /*
- * Remove the SSH fingerprint for all hostnames / ports for the specified server
+ * Remove the SSH fingerprint for all domains / ports for the specified server
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -602,12 +742,12 @@ function servers_register_host($server){
  */
 function servers_unregister_host($server){
     try{
-        $server    = servers_get($server);
-        $hostnames = servers_get_hostnames($server);
+        $server  = servers_get($server);
+        $domains = servers_list_domains($server);
 
-        foreach($hostnames as $hostname){
-            $server  = servers_get($hostname);
-            $entries = ssh_add_known_host($server['hostname'], $server['port']);
+        foreach($domains as $domain){
+            $server  = servers_get($domain);
+            $entries = ssh_add_known_host($server['domain'], $server['port']);
 
             if($entries){
                 $retval = array_merge($entries, $entries);
@@ -636,7 +776,7 @@ function servers_unregister_host($server){
  * @param boolean $database
  * @param boolean $return_proxies
  * @param boolean $limited_columns
- * @return array The database entry data for the requested hostname
+ * @return array The database entry data for the requested domain
  */
 function servers_get($server, $database = false, $return_proxies = true, $limited_columns = false){
     try{
@@ -665,7 +805,7 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
         if($limited_columns){
             $query = 'SELECT `servers`.`id`,
-                             `servers`.`hostname`,
+                             `servers`.`domain`,
                              `servers`.`port`,
                              `servers`.`ipv4`,
 
@@ -680,8 +820,8 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
                              `servers`.`cost`,
                              `servers`.`status`,
                              `servers`.`interval`,
-                             `servers`.`hostname`,
-                             `servers`.`seohostname`,
+                             `servers`.`domain`,
+                             `servers`.`seodomain`,
                              `servers`.`bill_duedate`,
                              `servers`.`ssh_accounts_id`,
                              `servers`.`database_accounts_id`,
@@ -715,10 +855,7 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
                    ON        `customers`.`id`                 = `servers`.`customers_id`
 
                    LEFT JOIN `ssh_accounts`
-                   ON        `ssh_accounts`.`id`              = `servers`.`ssh_accounts_id`
-
-                   LEFT JOIN `servers_hostnames`
-                   ON        `servers_hostnames`.`servers_id` = `servers`.`id` ';
+                   ON        `ssh_accounts`.`id`              = `servers`.`ssh_accounts_id` ';
 
         if(is_numeric($server)){
             /*
@@ -729,49 +866,43 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
         }elseif(is_array($server)){
             /*
-             * Server host specified by array containing hostname
+             * Server host specified by array containing domain
              */
-            if(empty($server['hostname'])){
-                throw new bException(tr('servers_get(): Specified server array does not contain a hostname'), 'invalid');
+            if(empty($server['domain'])){
+                throw new bException(tr('servers_get(): Specified server array does not contain a domain'), 'invalid');
             }
 
-            if(is_numeric($server['hostname'])){
+            if(is_numeric($server['domain'])){
                 /*
                  * Host specified by id
                  */
                 $where   = ' WHERE `servers`.`id` = :id';
-                $execute = array(':id' => $server['hostname']);
+                $execute = array(':id' => $server['domain']);
 
-            }elseif(is_scalar($server['hostname'])){
+            }elseif(is_scalar($server['domain'])){
                 /*
-                 * Host specified by hostname
+                 * Host specified by domain
                  */
-                $where   = ' WHERE `servers_hostnames`.`hostname` = :hostnames
-                             OR    `servers`.`hostname`           = :hostname';
+                $where   = ' WHERE `servers`.`domain` = :domain';
 
-                $execute = array(':hostnames' => $server['hostname'],
-                                 ':hostname'  => $server['hostname']);
+                $execute = array(':domain' => $server['domain']);
 
             }else{
-                throw new bException(tr('servers_get(): Specified server array hostname should be a natural numeric id or a hostname, but is a ":type"', array(':type' => gettype($server['hostname']))), 'invalid');
+                throw new bException(tr('servers_get(): Specified server array domain should be a natural numeric id or a domain, but is a ":type"', array(':type' => gettype($server['domain']))), 'invalid');
             }
 
         }elseif(is_string($server)){
             /*
-             * Hostname specified by name
+             * Domain specified by name
              */
-            $where   = ' WHERE `servers_hostnames`.`hostname`    = :hostnames
-                         OR    `servers_hostnames`.`seohostname` = :seohostnames
-                         OR    `servers`.`hostname`              = :hostname
-                         OR    `servers`.`seohostname`           = :seohostname';
+            $where   = ' WHERE `servers`.`domain`    = :domain
+                         OR    `servers`.`seodomain` = :seodomain';
 
-            $execute = array(':hostnames'    => $server,
-                             ':seohostnames' => $server,
-                             ':hostname'     => $server,
-                             ':seohostname'  => $server);
+            $execute = array(':domain'    => $server,
+                             ':seodomain' => $server);
 
         }else{
-            throw new bException(tr('servers_get(): Invalid server or hostname specified. Should be either a natural nuber, hostname, or array containing hostname information'), 'invalid');
+            throw new bException(tr('servers_get(): Invalid server or domain specified. Should be either a natural nuber, domain, or array containing domain information'), 'invalid');
         }
 
         if($database){
@@ -789,8 +920,6 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
         if(!$dbserver){
             throw new bException(tr('servers_get(): Specified server ":server" does not exist', array(':server' => $server)), 'not-exist');
         }
-
-        $dbserver['hostnames'] = sql_list('SELECT `id`, `hostname` FROM `servers_hostnames` WHERE `servers_id` = :servers_id AND `status` IS NULL', array(':servers_id' => $dbserver['id']), false, 'core');
 
         if($return_proxies){
             $dbserver['proxies'] = array();
@@ -823,7 +952,7 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
 
     }catch(Exception $e){
         if($e->getCode() == 'multiple'){
-            throw new bException(tr('servers_get(): Specified hostname ":hostname" matched multiple results, please specify a more exact hostname', array(':hostname' => (is_array($server) ? isset_get($server['hostname']) : $server))), 'multiple');
+            throw new bException(tr('servers_get(): Specified domain ":domain" matched multiple results, please specify a more exact domain', array(':domain' => (is_array($server) ? isset_get($server['domain']) : $server))), 'multiple');
         }
 
         throw new bException('servers_get(): Failed', $e);
@@ -842,21 +971,21 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
  * @package servers
  * @exception bException/failed-connect when server connection test fails
  *
- * @param mixed $server The server to be tested. Specified either by only a hostname string, or a server array
+ * @param mixed $server The server to be tested. Specified either by only a domain string, or a server array
  * @return void If the server test was executed succesfully, nothing happens
  */
-function servers_test($hostname){
+function servers_test($domain){
     try{
-        sql_query('UPDATE `servers` SET `status` = "testing" WHERE `hostname` = :hostname', array(':hostname' => $hostname), 'core');
+        sql_query('UPDATE `servers` SET `status` = "testing" WHERE `domain` = :domain', array(':domain' => $domain), 'core');
 
-        $result = servers_exec($hostname, 'echo 1');
+        $result = servers_exec($domain, 'echo 1');
         $result = array_pop($result);
 
         if($result != '1'){
-            throw new bException(tr('servers_test(): Failed to SSH connect to ":server"', array(':server' => $user.'@'.$hostname.':'.$port)), 'failed-connect');
+            throw new bException(tr('servers_test(): Failed to SSH connect to ":server"', array(':server' => $user.'@'.$domain.':'.$port)), 'failed-connect');
         }
 
-        sql_query('UPDATE `servers` SET `status` = NULL WHERE `hostname` = :hostname', array(':hostname' => $hostname), 'core');
+        sql_query('UPDATE `servers` SET `status` = NULL WHERE `domain` = :domain', array(':domain' => $domain), 'core');
 
     }catch(Exception $e){
         throw new bException('servers_test(): Failed', $e);
@@ -1016,19 +1145,19 @@ function servers_remove_identity_file($identity_file, $background = false){
  * @category Function reference
  * @package servers
  *
- * @param  string $hostname The name of the host where to detect the operating system
+ * @param  string $domain The name of the host where to detect the operating system
  * @return array            An array containing the operatings system type (linux, windows, macos, etc), group (ubuntu group, redhad group, debian group), name (ubuntu, mint, fedora, etc), and version (7.4, 16.04, etc)
  * @see servers_get_os()
  */
-function servers_detect_os($hostname){
+function servers_detect_os($domain){
     try{
         /*
          * Getting complete operating system distribution
          */
-        $output_version = servers_exec($hostname, 'cat /proc/version');
+        $output_version = servers_exec($domain, 'cat /proc/version');
 
         if(empty($output_version)){
-            throw new bException(tr('servers_detect_os(): No operating system found on /proc/version for hostname ":hostname"', array(':hostname' => $hostname)), 'unknown');
+            throw new bException(tr('servers_detect_os(): No operating system found on /proc/version for domain ":domain"', array(':domain' => $domain)), 'unknown');
         }
 
         /*
@@ -1044,16 +1173,16 @@ function servers_detect_os($hostname){
 
         switch($group){
             case 'debian':
-                $release = servers_exec($hostname, 'cat /etc/issue');
+                $release = servers_exec($domain, 'cat /etc/issue');
                 break;
 
             case 'ubuntu':
-                $release = servers_exec($hostname, 'cat /etc/issue');
+                $release = servers_exec($domain, 'cat /etc/issue');
                 break;
 
             case 'red hat':
                 $group   = 'redhat';
-                $release = servers_exec($hostname, 'cat /etc/redhat-release');
+                $release = servers_exec($domain, 'cat /etc/redhat-release');
                 break;
 
             default:
@@ -1099,7 +1228,7 @@ function servers_detect_os($hostname){
 
 
 /*
- * Returns the public IP for the specified hostname
+ * Returns the public IP for the specified domain
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
@@ -1107,12 +1236,12 @@ function servers_detect_os($hostname){
  * @category Function reference
  * @package servers
  *
- * @param string $hostname
- * @return string $ip The IP for the specified hostname
+ * @param string $domain
+ * @return string $ip The IP for the specified domain
  */
-function servers_get_public_ip($hostname){
+function servers_get_public_ip($domain){
     try{
-        $ip = servers_exec($hostname, 'dig +short myip.opendns.com @resolver1.opendns.com');
+        $ip = servers_exec($domain, 'dig +short myip.opendns.com @resolver1.opendns.com');
 
         if(is_array($ip)){
             $ip = $ip[0];
@@ -1142,7 +1271,7 @@ function servers_get_public_ip($hostname){
 function servers_get_proxy($servers_id){
     try{
         $server = sql_get('SELECT    `servers`.`id`,
-                                     `servers`.`hostname`,
+                                     `servers`.`domain`,
                                      `servers`.`port`,
                                      `servers`.`ipv4`,
                                      `servers_ssh_proxies`.`proxies_id`
@@ -1184,7 +1313,7 @@ function servers_get_proxy($servers_id){
 function servers_list_proxies($servers_id){
     try{
         $servers = sql_list('SELECT    `servers`.`id`,
-                                       `servers`.`hostname`,
+                                       `servers`.`domain`,
                                        `servers`.`port`,
                                        `servers`.`ipv4`,
                                        `servers_ssh_proxies`.`proxies_id`
@@ -1332,6 +1461,41 @@ function servers_delete_ssh_proxy($servers_id, $proxies_id){
 
     }catch(Exception $e){
 		throw new bException('servers_delete_ssh_proxy(): Failed', $e);
+	}
+}
+
+
+
+/*
+ * Returns the ID for the specified server data
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param mixed $server
+ * @param integer The servers_id
+ */
+function servers_get_id($server){
+    try{
+        if(!$server){
+            return null;
+        }
+
+        if(is_array($server)){
+            $server = $server['id'];
+
+        }elseif(!is_numeric($server)){
+            $server = servers_get($server);
+            $server = $server['id'];
+        }
+
+        return $server;
+
+    }catch(Exception $e){
+		throw new bException('servers_get_id(): Failed', $e);
 	}
 }
 ?>

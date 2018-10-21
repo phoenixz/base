@@ -1,83 +1,373 @@
 #!/usr/bin/php
 <?php
 /*
- * This is an empty test script template
+ * This is the servers management script.
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package base-scripts
  */
-$usage = './scripts/domains --keywords KEYWORD1 [KEYWORD2] [...] --tld TLD';
+$usage = './scripts/domains
+./scripts/domains add DOMAIN [DOMAIN DOMAIN ...]
+./scripts/domains list domains [options]
+./scripts/domains show domain SERVER
+./scripts/domains link domain [SERVER SERVER SERVER]
+./scripts/domains unlink domain [SERVER SERVER SERVER]';
 
-$help  = 'This script can be used to manage domains and the domains scanner';
+$help  = 'This is the domains management script
+
+This script can manage the domains.
+
+
+
+METHODS
+
+
+
+list [%DOMAIN%]                 - List all registerd domains, or by part of
+                                  specified domain
+
+        --only-domains          - Show only the domains. Useful with --quiet
+
+        --provider DOMAIN       - List all domains for the specified provider
+
+        --customer CUSTOMER     - List all domains for the specified customer
+
+
+show DOMAIN                     - Show details about the specified domain
+
+add DOMAIN [SERVER...]          - Add specified domain to the database. If a
+                                  list of servers is specified, the domain will
+                                  immediately be linked to these servers
+
+update DOMAIN                   - Update specified domain in the database
+
+link DOMAIN SERVER [SERVER...]  - Link the specified domain to the specified
+                                  list of servers. Both domain and servers can
+                                  be specified by either the domain or their
+                                  respectitive id\'s
+
+unlink DOMAIN SERVER [SERVER...]- Unlink the specified domain from the specified
+                                  list of servers. Both domain and servers can
+                                  be specified by either the domain or their
+                                  respectitive id\'s
+
+delete ID | DOMAIN              - Set the status of the specified domain to
+                                  "deleted" and remove the SSH fingerprints from
+                                  both ssh_fingerprints and the
+                                  ROOT/data/ssh/known_hosts file. Linked servers
+                                  will remain linked.
+
+erase ID | DOMAIN               - Erase the specified host from the database.
+                                  Linked servers will be (obviously) unlinked
+
+register HOSTNAME [SSH-PORT]    - Add the fingerprints for the specified
+                                  domain / port to the ssh_fingerprints table
+                                  and the ROOT/data/ssh/known_host file
+
+unregister HOSTNAME [SSH-PORT]  - Remove the registered domain / port
+                                  fingerprints from the ROOT/data/ssh/known_host
+                                  file and the ssh_fingerprints table';
 
 require_once(__DIR__.'/../../libs/startup.php');
 
-cli_only();
-load_libs('whois');
+try{
+    cli_only();
+    load_libs('whois');
 
-switch(cli_method()){
-    case 'scan':
-        $domains = sql_query('SELECT `domain` FROM `domains` WHERE `type` = "scan" AND `status` IS NULL');
+    switch(cli_method()){
+        case 'scan':
+            $domains = sql_query('SELECT `domain` FROM `domains` WHERE `type` = "scan" AND `status` IS NULL');
 
-        while($domain = sql_fetch($domains, true)){
-            log_console(tr('Scanning domain ":domain"', array()));
+            while($domain = sql_fetch($domains, true)){
+                log_console(tr('Scanning domain ":domain"', array()));
 
-            $results = safe_exec('whois '.$domain.' | grep "Name Server"', 1);
-            $ns      = array();
-            $errors  = array();
+                $results = safe_exec('whois '.$domain.' | grep "Name Server"', 1);
+                $ns      = array();
+                $errors  = array();
 
-            foreach($results as $result){
-                if(strstr($result, 'Name Server')){
-                    $nameserver = str_from($result, 'Name Server');
-                    $nameserver = str_replace(':', '', $nameserver);
-                    $nameserver = trim($nameserver);
-                    $ns[] = $nameserver;
+                foreach($results as $result){
+                    if(strstr($result, 'Name Server')){
+                        $nameserver = str_from($result, 'Name Server');
+                        $nameserver = str_replace(':', '', $nameserver);
+                        $nameserver = trim($nameserver);
+                        $ns[] = $nameserver;
+
+                    }else{
+                        /*
+                         * No "Name Server" in here, error?
+                         *
+                         */
+                        $errors[] = $result;
+                    }
+                }
+
+                if($errors){
+                    foreach($errors as $error){
+                        log_console(tr('Found possible error ":error"', array(':error' => $error)));
+                    }
+                }
+
+                if($ns){
+                    foreach($ns as $nameserver){
+                        log_console(tr('Found name server record ":nameserver"', array(':nameserver' => $nameserver)));
+                    }
+
+                    log_console(tr('Domain ":domain" exists', array(':domain' => $domain)));
+                    sql_query('UPDATE `domains` SET `status` = "exists" WHERE `domain` = :domain AND `type` = "scan"', array(':domain' => $domain));
 
                 }else{
-                    /*
-                     * No "Name Server" in here, error?
-                     *
-                     */
-                    $errors[] = $result;
+                    log_console(tr('Domain ":domain" is available', array(':domain' => $domain)));
+                    sql_query('UPDATE `domains` SET `status` = "available" WHERE `domain` = :domain AND `type` = "scan"', array(':domain' => $domain));
                 }
             }
 
-            if($errors){
-                foreach($errors as $error){
-                    log_console(tr('Found possible error ":error"', array(':error' => $error)));
-                }
-            }
+            break;
 
-            if($ns){
-                foreach($ns as $nameserver){
-                    log_console(tr('Found name server record ":nameserver"', array(':nameserver' => $nameserver)));
-                }
+        case 'reset':
+            $results = sql_query('UPDATE `domains` SET `status` = NULL WHERE `type` = "scan"');
+            $count   = sql_num_rows($results);
 
-                log_console(tr('Domain ":domain" exists', array(':domain' => $domain)));
-                sql_query('UPDATE `domains` SET `status` = "exists" WHERE `domain` = :domain AND `type` = "scan"', array(':domain' => $domain));
+            if($count){
+                log_console(tr('Reset ":count" scanned domains', array(':count' => $count)));
 
             }else{
-                log_console(tr('Domain ":domain" is available', array(':domain' => $domain)));
-                sql_query('UPDATE `domains` SET `status` = "available" WHERE `domain` = :domain AND `type` = "scan"', array(':domain' => $domain));
+                log_console(tr('No scanned domains reset'), 'yellow');
             }
-        }
 
-        break;
+            break;
 
-    case 'reset':
-        $results = sql_query('UPDATE `domains` SET `status` = NULL WHERE `type` = "scan"');
-        $count   = sql_num_rows($results);
+        case 'add':
+            $domain  = cli_arguments(0);
+            $servers = cli_arguments();
+            $count   = 0;
 
-        if($count){
-            log_console(tr('Reset ":count" scanned domains', array(':count' => $count)));
+            cli_no_arguments_left();
 
-        }else{
-            log_console(tr('No scanned domains reset'), 'yellow');
-        }
+            try{
+                domains_insert(array('domain'  => $domain,
+                                     'servers' => $servers));
 
-        break;
+                log_console(tr('Added domain ":domain"', array(':domain' => $domain)), 'green');
 
-    case '':
-        throw new bException(tr('No method specified'), 'not-specified');
+            }catch(Exception $e){
+                if($e->getRealCode() !== 'validation'){
+                    throw $e;
+                }
 
-    default:
-        throw new bException(tr('Unknown argument ":method" specified', array(':method' => cli_method())), 'unknown');
+                if(preg_match('/Domain ".+?" already exists/', $e->getMessage())){
+                    log_console(tr('Domain":domain" already exists', array(':domain' => $domain)), 'warning');
+
+                }else{
+                    log_console($e);
+                }
+            }
+
+            break;
+
+        case 'update':
+            $server['domain'] = cli_argument(0);
+            domains_update($server);
+            break;
+
+        case 'register':
+            $server = cli_argument(1);
+            cli_no_arguments_left();
+
+            $server = domains_like($server);
+            $server = domains_get($server);
+            $count  = ssh_add_known_host($server['domain'], $server['port']);
+
+            if($count){
+                log_console(tr('Added ":count" domains', array(':count' => $count)), 'green');
+
+            }else{
+                log_console(tr('Added no domains, domain was probably already registered'), 'yellow');
+            }
+
+            break;
+
+        case 'unregister':
+            $server = cli_argument(1);
+            cli_no_arguments_left();
+
+            $server = domains_like($server);
+            $server = domains_get($server);
+            $count  = ssh_remove_known_host($server['domain'], $server['port']);
+
+            if($count){
+                log_console(tr('Removed ":count" domains', array(':count' => $count)), 'green');
+
+            }else{
+                log_console(tr('Removed no domains, domain was probably not registered'), 'yellow');
+            }
+
+            break;
+
+        case 'delete':
+            $status = ensure_variable($status, 'deleted');
+            // FALLTHROUH
+
+        case 'undelete':
+            $status = ensure_variable($status, null);
+            // FALLTHROUH
+
+        case 'status':
+            $server = cli_argument(1);
+            $status   = ensure_variable($status, cli_argument(2));
+            cli_no_arguments_left();
+
+            $count = domains_unregister_host(array('domain'      => $server,
+                                                   'identity_file' => $identity_file));
+
+            if($count){
+                log_console(tr('Removed ":count" hashed domains', array(':count' => $count)), 'green');
+
+            }else{
+                log_console(tr('Removed no hashed domains, domain was probably not registered'), 'yellow');
+            }
+
+            break;
+
+        case 'erase':
+            $server = cli_argument(1);
+            cli_no_arguments_left();
+
+            $count = domains_unregister_host(array('domain'      => $server,
+                                                   'identity_file' => $identity_file));
+
+            if($count){
+                log_console(tr('Removed ":count" hashed domains', array(':count' => $count)), 'green');
+
+            }else{
+                log_console(tr('Removed no hashed domains, domain was probably not registered'), 'yellow');
+            }
+
+            break;
+
+        case 'list':
+            $only_domains = cli_argument('--only-domains');
+            $customer       = cli_argument('--customer', true);
+            $provider       = cli_argument('--provider', true);
+            $execute        = array();
+            $where          = array();
+
+            cli_no_arguments_left();
+
+            if(DELETED){
+                $where[] = ' `domains`.`status` = "deleted" ';
+
+            }elseif(!ALL){
+                $where[] = ' `domains`.`status` IS NULL OR `domains`.`status` = "testing" ';
+            }
+
+            if(STATUS){
+                $execute = array_merge($execute, sql_in(ALL));
+                $where[] = ' `domains`.`status` IN ('.implode(', ', array_keys(ALL)).') ';
+            }
+
+            if($customer){
+                load_libs('customers');
+                $customers_id = customers_get($customer, 'id');
+
+                if(!$customers_id){
+                    throw new bException(tr('The specified customer ":customer" does not exist', array(':customer' => $customer)), 'warning');
+                }
+
+                $execute[':customers_id'] = $customers_id;
+                $where[] = ' `domains`.`customers_id` = :customers_id ';
+            }
+
+            if($provider){
+                load_libs('providers');
+                $providers_id = customers_get($provider, 'id');
+
+                if(!$providers_id){
+                    throw new bException(tr('The specified provider ":provider" does not exist', array(':provider' => $provider)), 'warning');
+                }
+
+                $execute[':providerss_id'] = $providers_id;
+                $where[] = ' `domains`.`providerss_id` = :providerss_id ';
+            }
+
+            $query   = 'SELECT    `domains`.`id`,
+                                  `domains`.`domain`,
+                                  `domains`.`seodomain`,
+                                  `domains`.`status`,
+                                  `domains`.`createdon`,
+                                  `domains`.`description`,
+
+                                  `customers`.`name` AS `customer`,
+
+                                  `providers`.`name` AS `provider`,
+
+                                  `users`.`name`     AS `user_name`,
+                                  `users`.`email`    AS `user_email`,
+                                  `users`.`username` AS `user_username`,
+                                  `users`.`nickname` AS `user_nickname`
+
+                        FROM      `domains`
+
+                        LEFT JOIN `customers`
+                        ON        `customers`.`id` = `domains`.`customers_id`
+
+                        LEFT JOIN `providers`
+                        ON        `providers`.`id` = `domains`.`providers_id`
+
+                        LEFT JOIN `users`
+                        ON        `users`.`id` = `domains`.`createdby`';
+
+            if(empty($where)){
+                $where = '';
+
+            }else{
+                $where = ' WHERE '.implode(' AND ', $where);
+            }
+
+            $order   = ' ORDER BY `domains`.`status` IS NOT NULL DESC ';
+            $servers = sql_query($query.$where.$order.(LIMIT ? ' LIMIT '.LIMIT : ''), $execute);
+
+            if(!$servers->rowCount()){
+                    log_console(tr('There are currently no servers registered'), 'QUIET/yellow');
+
+            }else{
+                if($only_domains){
+                    log_console(tr('Hostname'), 'QUIET/cyan');
+
+                    while($server = sql_fetch($servers)){
+                        log_console($server['domain']);
+                    }
+
+                }else{
+                    log_console(str_size(tr('#id'), 7).str_size(tr('Customer'), 25).str_size(tr('Provider'), 25).str_size(tr('Hostname'), 33).str_size(tr('Status'), 13).str_size(tr('Created by'), 32), 'QUIET/cyan');
+
+                    while($server = sql_fetch($servers)){
+                        log_console(str_size($server['id'], 6, ' ', true).' '.str_size($server['customer'], 24).' '.str_size($server['provider'], 24).' '.str_size($server['domain'], 32).' '.cli_status_color(str_size($server['status'], 12)).' '.name($server, 'user'));
+                    }
+                }
+            }
+
+            break;
+
+        case '':
+            throw new bException(tr('No method specified'), 'not-specified');
+
+        default:
+            throw new bException(tr('Unknown argument ":method" specified', array(':method' => cli_method())), 'unknown');
+    }
+
+}catch(Exception $e){
+    switch($e->getRealCode()){
+        case 'not-exist':
+            // FALLTHROUGH
+        case 'multiple':
+            // FALLTHROUGH
+        case 'sudo':
+            throw $e->makeWarning(true);
+    }
+
+    throw $e;
 }
 ?>
