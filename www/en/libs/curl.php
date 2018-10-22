@@ -13,7 +13,7 @@
 load_config('curl');
 
 if(!function_exists('curl_init')){
-    throw new bException('PHP CURL module is not installed. Install PHP CURL on Ubuntu with "sudo apt-get install php5-curl", or on Redhat with "sudo yum install php-curl"', 'not-installed');
+    throw new bException('PHP CURL module is not installed. Install PHP CURL on Ubuntu with "sudo apt-get install php-curl", or on Redhat with "sudo yum install php-curl"', 'not-installed');
 }
 
 
