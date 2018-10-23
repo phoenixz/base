@@ -157,9 +157,9 @@ function uglify_css($paths = null){
              * not, etc.
              */
             foreach(file_list_tree($path) as $file){
-				if(substr(str_rfrom($file, '/'), 0, 7) === 'bundle-'){
-					continue;
-				}
+                if(substr(str_rfrom($file, '/'), 0, 7) === 'bundle-'){
+                    continue;
+                }
 
                 if(is_link($file)){
                     if(substr($file, -7, 7) == '.min.js'){
@@ -181,8 +181,8 @@ function uglify_css($paths = null){
 
             foreach(file_list_tree($path) as $file){
                 if(substr(str_rfrom($file, '/'), 0, 7) === 'bundle-'){
-					continue;
-				}
+                    continue;
+                }
 
 				/*
                  * Update path for each file since the file may be in a sub directory
