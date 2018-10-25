@@ -109,6 +109,8 @@ function upload_ocupload($selector = 'input[name=upload]', $url = '/ajax/upload.
  * See https://github.com/blueimp/jQuery-File-Upload/wiki for documentation
  */
 function upload_multi($params){
+    global $_CONFIG;
+
     try{
         array_params($params);
         array_default($params, 'selector'  , '');
@@ -118,7 +120,24 @@ function upload_multi($params){
         array_default($params, 'complete'  , '');
         array_default($params, 'process'   , '');
         array_default($params, 'processall', '');
+        array_default($params, 'post'      , null);
         array_default($params, 'iframe'    , false);
+
+        if($params['post']){
+            /*
+             * Validate post to be an array first to ensure clean exceptions
+             */
+            if(!is_array($params['post'])){
+                throw new bException(tr('upload_multi(): Specified post parameter should be an array but is a ":type"', array(':type' => gettype($params['post']))), 'invalid');
+            }
+
+            if($_CONFIG['security']['csrf']['enabled']){
+                /*
+                 * CSRF required, auto add the current CSRF
+                 */
+                $params['post']['csrf'] = set_csrf();
+            }
+        }
 
         if(empty($params['selector'])){
             throw new bException(tr('upload_multi(): No "selector" specified'), 'not-specified');
@@ -155,9 +174,11 @@ function upload_multi($params){
                 url      : "'.$params['url'].'",
                 '.
 
-                ($params['complete'] ?   'complete : '.$params['complete'].',' : '').
+                ($params['complete'] ?   'complete     : '.$params['complete'].','                                  : '').
 
-                ($params['fail']     ? "\n".'fail  : '.$params['fail'].','     : '').'
+                ($params['fail']     ? "\n".'fail      : '.$params['fail'].','                                      : '').
+
+                ($params['post']     ? "\n".'formData  : '.json_encode_custom(array_to_object($params['post'])).',' : '').'
 
                 progress: function (e, data) {
                     '.$params['process'].'
