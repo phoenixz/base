@@ -231,6 +231,29 @@ function array_from_object($object, $recurse = true){
 
 
 /*
+ * Return an object from the given array, recursively
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package array
+ *
+ * @param array $array
+ * @return object The array that was created from the specified array
+ */
+function array_to_object($array){
+    try{
+        return (object) $array;
+
+    }catch(Exception $e){
+        throw new bException('array_to_object(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Return a random value from the specified array
  */
 function array_random_value($array){
