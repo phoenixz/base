@@ -338,6 +338,7 @@ $_CONFIG['security']           = array('signin'                             => a
                                        'seed'                               => '%T"$#HET&UJHRT87',                                          // SEED for generating codes
 
                                        'csrf'                               => array('enabled'          => 'force',                         // CSRF detection configuration. true | false | "force". Force will forcibly check every POST on CSRF
+                                                                                     'buffer_size'      => 10,                              // The amount of server side CSRF keys that are being kept. With more keys, more pages can be run in parrallel
                                                                                      'timeout'          => 0));                             // Timeout after page generation, where @ POST time the CSRF check will fail. Use 0 to disable
 
 

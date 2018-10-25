@@ -2369,7 +2369,7 @@ function status($status, $list = null){
  * Generate a CSRF code and set it in the $_SESSION[csrf] array
  */
 function set_csrf($prefix = ''){
-    global $_CONFIG;
+    global $_CONFIG, $core;
 
     try{
         if(empty($_CONFIG['security']['csrf']['enabled'])){
@@ -2379,15 +2379,27 @@ function set_csrf($prefix = ''){
             return false;
         }
 
+        if($core->register('csrf')){
+            return $core->register('csrf');
+        }
+
         /*
          * Avoid people messing around
          */
-        if(isset($_SESSION['csrf']) and (count($_SESSION['csrf']) >= 20)){
+        if(isset($_SESSION['csrf']) and (count($_SESSION['csrf']) >= $_CONFIG['security']['csrf']['buffer_size'])){
             /*
              * Too many csrf, so too many post requests open. Remove the oldest
              * CSRF code and add a new one
              */
-            array_shift($_SESSION['csrf']);
+            if(count($_SESSION['csrf']) >= ($_CONFIG['security']['csrf']['buffer_size'] + 5)){
+                /*
+                 * WTF? How did we get so many?? Throw it all away, start over
+                 */
+                unset($_SESSION['csrf']);
+
+            }else{
+                array_shift($_SESSION['csrf']);
+            }
         }
 
         $csrf = $prefix.unique_code('sha256');
@@ -2399,6 +2411,7 @@ function set_csrf($prefix = ''){
         $_SESSION['csrf'][$csrf] = new DateTime();
         $_SESSION['csrf'][$csrf] = $_SESSION['csrf'][$csrf]->getTimestamp();
 
+        $core->register('csrf', $csrf);
         return $csrf;
 
     }catch(Exception $e){

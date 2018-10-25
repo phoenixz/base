@@ -770,14 +770,6 @@ function html_header($params = null, $meta = array()){
         $retval .= html_favicon($params['favicon']).$params['extra'];
         $retval .= '</head>'.$params['body'];
 
-        if($_CONFIG['security']['csrf']['enabled'] === 'force'){
-            /*
-             * Always add a CSRF for ajax
-             */
-            $csrf    = set_csrf('ajax_');
-            $retval .= '<input type="hidden" id="ajax_csrf" name="ajax_csrf" value="'.$csrf.'">';
-        }
-
         return $retval;
 
     }catch(Exception $e){
