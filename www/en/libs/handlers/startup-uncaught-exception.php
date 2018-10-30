@@ -202,9 +202,13 @@ try{
                 $e->setCode(400);
             }
 
-            if(is_numeric($e->getCode()) and page_show($e->getCode(), array('exists' => true))){
-                log_file(tr('Displaying exception page ":page"', array(':page' => $e->getCode())), 'exceptions', 'error');
-                page_show($e->getCode(), array('message' =>$e->getMessage()));
+            if(($e instanceof bException) and is_numeric($e->getRealCode()) and page_show($e->getRealCode(), array('exists' => true))){
+                if($e->isWarning()){
+                    html_flash_set($e->getMessage(), 'warning', $e->getRealCode());
+                }
+
+                log_file(tr('Displaying exception page ":page"', array(':page' => $e->getRealCode())), 'exceptions', 'error');
+                page_show($e->getRealCode(), array('message' =>$e->getMessage()));
             }
 
             if(debug()){
@@ -288,6 +292,14 @@ try{
                             </table>';
 
                 echo $retval;
+
+                if($e instanceof bException){
+                    /*
+                     * Clean data
+                     */
+                    $e->setData(array_hide($e->getData(), 'GLOBALS,%pass,ssh_key'));
+                }
+
                 showdie($e);
             }
 
