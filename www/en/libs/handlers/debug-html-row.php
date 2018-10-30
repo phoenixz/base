@@ -97,25 +97,13 @@ try{
                     </tr>';
 
         case 'object':
-            $retval = '';
-
-// :DELETE: This is not working, only print_r seems to be able to get all required object data..
-            ///*
-            // * Display all object properties
-            // */
-            //foreach(get_object_vars($value) as $var){
-            //    $retval .= debug_html($value->$var, $var, 'property');
-            //}
-            //
-            ///*
-            // * Display all object methods
-            // */
-            //foreach(get_class_methods($value) as $method){
-            //    $retval .= debug_html('', $method, 'method');
-            //}
-            //
-
-            $retval .= '<pre>'.print_r(variable_zts_safe($value), true).'</pre>';
+            /*
+             * Clean contents!
+             */
+            $value  = print_r($value, true);
+            $value  = preg_replace('/-----BEGIN RSA PRIVATE KEY.+?END RSA PRIVATE KEY-----/imus', '*** HIDDEN ***', $value);
+            $value  = preg_replace('/(\[.*?pass.*?\]\s+=>\s+).+/', '$1*** HIDDEN ***', $value);
+            $retval = '<pre>'.$value.'</pre>';
 
             return '<tr>
                         <td>'.$key.'</td>

@@ -19,7 +19,7 @@ try{
      * First cleanup data
      */
     if(is_array($data)){
-        $data = array_hide($data, 'GLOBALS,%password,ssh_key');
+        $data = array_hide($data, 'GLOBALS,%pass,ssh_key');
     }
 
     $retval = '';
