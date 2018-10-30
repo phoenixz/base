@@ -1129,23 +1129,42 @@ function array_merge_null(){
  * @category Function reference
  * @package ssh
  *
- * @param array
+ * @param array $source
+ * @param mixed $keys
+ * @param string $hide
+ * @param string $empty
+ * @param boolean $recurse
  * @return array
  */
-function array_hide($source, $keys = 'GLOBALS,%pass,ssh_key', $hide = '*** HIDDEN ***', $empty = '-'){
+function array_hide($source, $keys = 'GLOBALS,%pass,ssh_key', $hide = '*** HIDDEN ***', $empty = '-', $recurse = true){
     try{
+        if(!is_array($source)){
+            if($source === null){
+                return null;
+            }
+
+            throw new bException(tr('array_hide(): Specified source is not an array'), 'invalid');
+        }
+
         $keys = array_force($keys);
 
         foreach($keys as $key){
             foreach($source as $source_key => &$source_value){
-                if(strstr($key, '%')){
-                    if(strstr($source_key, str_replace('%', '', $key))){
-                        $source_value = str_hide($source_value, $hide, $empty);
+                if(is_array($source_value)){
+                    if($recurse){
+                        $source_value = array_hide($source_value, $keys, $hide, $empty, $recurse);
                     }
 
                 }else{
-                    if($source_key === $key){
-                        $source_value = str_hide($source_value, $hide, $empty);
+                    if(strstr($key, '%')){
+                        if(strstr($source_key, str_replace('%', '', $key))){
+                            $source_value = str_hide($source_value, $hide, $empty);
+                        }
+
+                    }else{
+                        if($source_key === $key){
+                            $source_value = str_hide($source_value, $hide, $empty);
+                        }
                     }
                 }
             }
