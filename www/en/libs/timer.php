@@ -81,7 +81,7 @@ function timer_get($process, $type = 'average'){
             return $time;
         }
 
-        throw new bException('timer_get(): Specified process "%process%" was not found', array('%process%' => $process), 'notfound');
+        throw new bException('timer_get(): Specified process "%process%" was not found', array('%process%' => $process), 'not-found');
 
     }catch(Exception $e){
         throw new bException('timer_get(): Failed', $e);
