@@ -81,7 +81,7 @@ function meta_history($meta_id){
                              LEFT JOIN `users`
                              ON        `users`.`id` = `meta_history`.`createdby`
 
-                             WHERE     `meta_id` = :meta_id
+                             WHERE     `meta_history`.`meta_id` = :meta_id
 
                              ORDER BY  `meta_history`.`createdon` DESC, `meta_history`.`id` DESC ',
 
