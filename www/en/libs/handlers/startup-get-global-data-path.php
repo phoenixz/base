@@ -34,13 +34,13 @@ try{
          * Cleanup path. If realpath fails, we know something is amiss
          */
         if(!$found = realpath($found)){
-            throw new bException('get_global_data_path(): Found path "'.$path.'" failed realpath() check', 'pathfailed');
+            throw new bException('get_global_data_path(): Found path "'.$path.'" failed realpath() check', 'path-failed');
         }
     }
 
     if(!$found){
         if(!PLATFORM_CLI){
-            throw new bException('get_global_data_path(): Global data path not found', 'notfound');
+            throw new bException('get_global_data_path(): Global data path not found', 'not-found');
         }
 
         try{
