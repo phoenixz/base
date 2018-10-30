@@ -412,7 +412,7 @@ function image_convert($source, $destination, $params = null){
          * Verify results
          */
         if(!file_exists($destination)) {
-            throw new bException(tr('image_convert(): Destination file ":file" not found after conversion', array(':file' => $destination)), 'notfound');
+            throw new bException(tr('image_convert(): Destination file ":file" not found after conversion', array(':file' => $destination)), 'not-found');
         }
 
         if(!empty($params['updatemode'])){

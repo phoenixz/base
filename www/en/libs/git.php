@@ -78,7 +78,7 @@ function git_branch($branch = null, $path = ROOT, $create = false){
                 }
             }
 
-            throw new bException(tr('git_branch(): Could not find current branch for ":path"', array(':path' => $path)), 'branchnotfound');
+            throw new bException(tr('git_branch(): Could not find current branch for ":path"', array(':path' => $path)), 'branch-not-found');
         }
 
     }catch(Exception $e){
