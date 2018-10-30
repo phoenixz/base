@@ -1163,18 +1163,20 @@ function user_signup($user, $no_password = false){
 
         $user['id'] = sql_random_id('users');
 
-        sql_query('INSERT INTO `users` (`id`, `status`, `createdby`, `username`, `password`, `name`, `email`, `roles_id`, `role`)
-                   VALUES              (:id , :status , :createdby , :username , :password , :name , :email , :roles_id , :role )',
+        sql_query('INSERT INTO `users` (`id`, `meta_id`, `status`, `createdby`, `username`, `password`, `name`, `email`, `employees_id`, `roles_id`, `role`)
+                   VALUES              (:id , :meta_id , :status , :createdby , :username , :password , :name , :email , :employees_id , :roles_id , :role )',
 
-                   array(':id'        => $user['id'],
-                         ':createdby' => isset_get($_SESSION['user']['id']),
-                         ':username'  => get_null(isset_get($user['username'])),
-                         ':status'    => isset_get($user['status']),
-                         ':name'      => isset_get($user['name']),
-                         ':password'  => (empty($user['password']) ? '' :((isset_get($user['status']) === '_new') ? '' : get_hash($user['password'], $_CONFIG['security']['passwords']['hash']))),
-                         ':email'     => get_null(isset_get($user['email'])),
-                         ':role'      => get_null(isset_get($user['role'])),
-                         ':roles_id'  => get_null(isset_get($user['roles_id']))));
+                   array(':id'           => $user['id'],
+                         ':createdby'    => isset_get($_SESSION['user']['id']),
+                         ':meta_id'      => meta_create(),
+                         ':username'     => get_null(isset_get($user['username'])),
+                         ':status'       => isset_get($user['status']),
+                         ':name'         => isset_get($user['name']),
+                         ':password'     => (empty($user['password']) ? '' :((isset_get($user['status']) === '_new') ? '' : get_hash($user['password'], $_CONFIG['security']['passwords']['hash']))),
+                         ':email'        => get_null(isset_get($user['email'])),
+                         ':role'         => get_null(isset_get($user['role'])),
+                         ':roles_id'     => get_null(isset_get($user['roles_id'])),
+                         ':employees_id' => get_null(isset_get($user['employees_id']))));
 
         /*
          * Return data from database with the given $user merged over it.
