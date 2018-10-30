@@ -350,7 +350,7 @@ function servers_update($server){
  * @package servers
  *
  * @param string $domain The domain section that is being searched for
- * @return array The list of servers that have a domain that appears like the specified domain
+ * @return string The domain of the found server
  */
 function servers_like($domain){
     try{
@@ -379,8 +379,8 @@ function servers_like($domain){
                                JOIN   `servers`
                                ON     `servers`.`id` = `domains_servers`.`servers_id`',
 
-                               array(':domain'    => '%'.$domain.'%',
-                                     ':seodomain' => '%'.$domain.'%'));
+                               true, array(':domain'    => '%'.$domain.'%',
+                                           ':seodomain' => '%'.$domain.'%'));
 
             if(!$server){
                 throw new bException(tr('servers_like(): Specified server ":server" does not exist', array(':server' => $domain)), 'not-exist');
@@ -918,7 +918,7 @@ function servers_get($server, $database = false, $return_proxies = true, $limite
         $dbserver = sql_get($query.$from.$where.' GROUP BY `servers`.`id`', null, $execute, 'core');
 
         if(!$dbserver){
-            throw new bException(tr('servers_get(): Specified server ":server" does not exist', array(':server' => $server)), 'not-exist');
+            throw new bException(tr('servers_get(): Specified server ":server" does not exist', array(':server' => (is_array($server) ? $server['domain'] : $server))), 'not-exist');
         }
 
         if($return_proxies){
@@ -1496,6 +1496,48 @@ function servers_get_id($server){
 
     }catch(Exception $e){
 		throw new bException('servers_get_id(): Failed', $e);
+	}
+}
+
+
+
+/*
+ * Scan the specified server for all the domains it might be processing
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param mixed $server
+ * @return integer The amount of scanned servers
+ */
+function servers_scan_domains($server = null){
+    try{
+        if(!$server){
+            /*
+             * Scan ALL servers
+             */
+            $domains = sql_query('SELECT `domain` FROM `servers` WHERE `status` IS NULL');
+
+            while($domain = sql_fetch($domains, true)){
+                $count++;
+                servers_scan_domains($domain);
+            }
+
+            return $count++;
+        }
+
+        /*
+         * Scan the server
+         */
+
+        servers_update_domains($server['id'], $domains);
+        return 1;
+
+    }catch(Exception $e){
+		throw new bException('servers_scan_domains(): Failed', $e);
 	}
 }
 ?>

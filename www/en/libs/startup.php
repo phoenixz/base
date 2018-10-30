@@ -383,7 +383,7 @@ class bException extends Exception{
 
             }else{
                 if(!($e instanceof Exception)){
-                    throw new bException(tr('bException: Specified exception object for exception ":message" is not valid (either not object or not an exception object)', array(':message' => $messages)), 'invalid');
+                    throw new bException(tr('bException: Specified exception object for exception ":message" is not valid (either it is not an object or not an exception object)', array(':message' => $messages)), 'invalid');
                 }
 
                 $this->messages[] = $e->getMessage();
@@ -394,7 +394,7 @@ class bException extends Exception{
 
         }else{
             if(!is_scalar($code)){
-                throw new bException(tr('bException: Specified exception code ":code" for exception ":message" is not valid (either scalar, or an exception object)', array(':code' => $code, ':message' => $messages)), 'invalid');
+                throw new bException(tr('bException: Specified exception code ":code" for exception ":message" is not valid (should be either scalar, or an exception object)', array(':code' => $code, ':message' => $messages)), 'invalid');
             }
 
             $orgmessage = reset($messages);
@@ -755,7 +755,7 @@ function tr($text, $replace = null, $verify = true){
              */
             if(empty($_CONFIG['production']) and $verify){
                 if($count != count($replace)){
-                    throw new bException('tr(): Not all specified keywords were found in text', 'notfound');
+                    throw new bException('tr(): Not all specified keywords were found in text', 'not-found');
                 }
 
                 /*
@@ -1743,14 +1743,14 @@ function log_file($messages, $class = 'syslog', $color = null){
                     $message = cli_color($message, $color, null, true);
                 }
 
-                fwrite($h[$file], cli_color($date, 'cyan', null, true).' '.$class.$key.' => '.$message."\n");
+                fwrite($h[$file], cli_color($date, 'cyan', null, true).' '.$core->callType().'/'.SCRIPT.' '.$class.$key.' => '.$message."\n");
 
             }else{
                 if(!empty($color)){
                     $message = cli_color($message, $color, null, true);
                 }
 
-                fwrite($h[$file], cli_color($date, 'cyan', null, true).' '.$class.$message."\n");
+                fwrite($h[$file], cli_color($date, 'cyan', null, true).' '.$core->callType().'/'.SCRIPT.' '.$class.$message."\n");
             }
         }
 
@@ -4339,17 +4339,17 @@ function shutdown(){
             /*
              * Execute this shutdown function with the specified value
              */
-            log_console(tr('shutdown(): Executing shutdown function ":function" with value ":value"', array(':function' => $key, ':value' => $value)), 'VERBOSE/cyan');
-
             if(is_array($value)){
                 /*
                  * Shutdown function value is an array. Execute it for each entry
                  */
                 foreach($value as $entry){
+                    log_console(tr('shutdown(): Executing shutdown function ":function" with value ":value"', array(':function' => $key, ':value' => $entry)), 'VERBOSE/cyan');
                     $key($entry);
                 }
 
             }else{
+                log_console(tr('shutdown(): Executing shutdown function ":function" with value ":value"', array(':function' => $key, ':value' => $value)), 'VERBOSE/cyan');
                 $key($value);
             }
 
