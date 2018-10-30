@@ -22,9 +22,8 @@ if(empty($connector['port']) or empty($connector['ssh_tunnel']['source_port'])){
     /*
      * Assign a dymanic port
      */
-// :TODO: IP 127.0.0.1 is still hardcoded, this should be made dynamic as well
     load_libs('inet');
-    $connector['port']                      = inet_get_available_port('127.0.0.1');
+    $connector['port']                      = inet_get_available_port(not_empty($connector['ssh_tunnel']['target_hostname'], '127.0.0.1'));
     $connector['ssh_tunnel']['source_port'] = $connector['port'];
 
     log_console(tr('Dynamically assigned port ":port" for SSH tunnel', array(':port' => $connector['port'])), 'VERBOSE');
@@ -38,6 +37,4 @@ $tunnel = ssh_tunnel($connector['ssh_tunnel']);
  */
 $connector['ssh_tunnel']['pid'] = $tunnel['pid'];
 $connector['port']              = $tunnel['source_port'];
-
-usleep(isset_get($connector['ssh_tunnel']['usleep'], 10000));
 ?>
