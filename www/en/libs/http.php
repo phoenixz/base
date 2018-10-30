@@ -295,6 +295,10 @@ function http_headers($params, $content_length){
          */
         http_response_code($params['http_code']);
 
+        if($params['http_code'] != 200){
+            log_file(tr('Base sent HTTP:http', array(':http' => $params['http_code'])), 'warning');
+        }
+
         foreach($headers as $header){
             header($header);
         }
