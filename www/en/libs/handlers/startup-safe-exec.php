@@ -116,16 +116,17 @@ under_construction();
             load_libs('json');
             log_file(tr('Command ":command" failed with exit code ":exitcode", see output below for more information', array(':command' => $command, ':exitcode' => $exitcode)), 'safe_exec', 'error');
 
-            if($output){
-                log_file($output, 'safe_exec', 'error');
-
-            }elseif(empty($lasline)){
-                log_file(tr('Command has no output'), 'safe_exec', 'error');
-
-            }else{
-                log_file(tr('Command only had last line (shown below)'), 'safe_exec', 'error');
-                log_file($lasline, 'safe_exec', 'error');
-            }
+// :DELETE: Since the exception will already log all the information, there is no need to log it separately
+            //if($output){
+            //    log_file($output, 'safe_exec', 'error');
+            //
+            //}elseif(empty($lasline)){
+            //    log_file(tr('Command has no output'), 'safe_exec', 'error');
+            //
+            //}else{
+            //    log_file(tr('Command only had last line (shown below)'), 'safe_exec', 'error');
+            //    log_file($lasline, 'safe_exec', 'error');
+            //}
 
             throw new bException(tr('safe_exec(): Command ":command" failed with exit code ":exitcode", see attached data for output', array(':command' => $command, ':exitcode' => $exitcode)), $exitcode, $output);
         }
