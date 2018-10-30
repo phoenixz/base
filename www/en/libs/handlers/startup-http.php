@@ -5,6 +5,8 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@capmega.com>, Johan Geuze
  */
+//putenv('VERBOSE=1');
+//putenv('VERYVERBOSE=1');
 
 
 
@@ -16,17 +18,17 @@ define('SCRIPT'     , str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
 define('PWD'        , slash(isset_get($_SERVER['PWD'])));
 define('STARTDIR'   , slash(getcwd()));
 
-define('FORCE'      , (getenv('FORCE')       ? 'FORCE'       : null));
-define('NOCOLOR'    , (getenv('NOCOLOR')     ? 'NOCOLOR'     : null));
-define('TEST'       , (getenv('TEST')        ? 'TEST'        : null));
-define('VERBOSE'    , (getenv('VERBOSE')     ? 'VERBOSE'     : null));
-define('VERYVERBOSE', (getenv('VERYVERBOSE') ? 'VERYVERBOSE' : null));
-define('QUIET'      , (getenv('QUIET')       ? 'QUIET'       : null));
-define('LIMIT'      , (getenv('LIMIT')       ? 'LIMIT'       : null));
-define('ORDERBY'    , (getenv('ORDERBY')     ? 'ORDERBY'     : null));
-define('ALL'        , (getenv('ALL')         ? 'ALL'         : null));
-define('DELETED'    , (getenv('DELETED')     ? 'DELETED'     : null));
-define('STATUS'     , (getenv('STATUS')      ? 'STATUS'      : null));
+define('FORCE'      , (getenv('FORCE')                    ? 'FORCE'       : null));
+define('NOCOLOR'    , (getenv('NOCOLOR')                  ? 'NOCOLOR'     : null));
+define('TEST'       , (getenv('TEST')                     ? 'TEST'        : null));
+define('VERYVERBOSE', (getenv('VERYVERBOSE')              ? 'VERYVERBOSE' : null));
+define('VERBOSE'    , ((VERYVERBOSE or getenv('VERBOSE')) ? 'VERBOSE'     : null));
+define('QUIET'      , (getenv('QUIET')                    ? 'QUIET'       : null));
+define('LIMIT'      , (getenv('LIMIT')                    ? 'LIMIT'       : null));
+define('ORDERBY'    , (getenv('ORDERBY')                  ? 'ORDERBY'     : null));
+define('ALL'        , (getenv('ALL')                      ? 'ALL'         : null));
+define('DELETED'    , (getenv('DELETED')                  ? 'DELETED'     : null));
+define('STATUS'     , (getenv('STATUS')                   ? 'STATUS'      : null));
 
 
 

@@ -53,7 +53,7 @@ try{
      */
     if(empty($_SERVER['PHP_SELF'])){
         if(!isset($_SERVER['_'])){
-            throw new Exception('No $_SERVER[PHP_SELF] or $_SERVER[_] found', 'notfound');
+            throw new Exception('No $_SERVER[PHP_SELF] or $_SERVER[_] found', 'not-found');
         }
 
          $_SERVER['PHP_SELF'] =  $_SERVER['_'];
