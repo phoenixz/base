@@ -345,6 +345,10 @@ class validate_form {
                 $this->testValue = $value;
 
             }else{
+                if(!is_natural($flags)){
+                    throw new bException(tr('validate_form::parseFlags(): Invalid flags ":flags" specified, it should be a natural number value', array(':flags' => $value)), 'invalid');
+                }
+
                 if($flags & VALIDATE_NOT){
                     $this->not = true;
                 }
