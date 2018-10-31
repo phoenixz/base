@@ -104,6 +104,10 @@ try{
                 }
             }
 
+            if(!$domains){
+                throw new bException(tr('No server(s) specified to add'), 'warning/not-specified');
+            }
+
             foreach($domains as $domain){
                 try{
                     servers_insert(array('domain'      => $domain,

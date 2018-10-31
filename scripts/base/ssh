@@ -13,12 +13,12 @@ $help  = 'This script allows to manage SSH connections to registered servers
 
 
 
-HOSTNAME                        - The hostname (or id) of the server to connect
+HOSTNAME                        - The domain (or id) of the server to connect
                                   to. The host must be registered in the servers
                                   system, and have an SSH account linked.
 
 COMMANDS                        - (optional) the commands to execute on the
-                                  specified hostname. If no commands have been
+                                  specified domain. If no commands have been
                                   specified, then "bash" will be executed,
                                   providing a bash shell for the user
 
@@ -50,11 +50,11 @@ show [ACCOUNTNAME]              - Show all details of the specified registerd
                                   SSH account
 
 register HOSTNAME [SSH-PORT]    - Register the fingerprint for the specified
-                                  hostname and port in the ssh_fingerprints
+                                  domain and port in the ssh_fingerprints
                                   table and ROOT/data/ssh/known_hosts file
 
 unregister HOSTNAME [SSH-PORT]  - Register the fingerprint for the specified
-                                  hostname and port in the ssh_fingerprints
+                                  domain and port in the ssh_fingerprints
                                   table and ROOT/data/ssh/known_hosts file
 
 rebuild                         - Rebuild the known_host file from the
@@ -148,33 +148,33 @@ try{
             die();
 
         case 'register':
-            $hostname = cli_argument(1);
+            $domain = cli_argument(1);
             $port     = cli_argument(2);
             cli_no_arguments_left();
 
-            $count = ssh_add_known_host($hostname, $port);
+            $count = ssh_add_known_host($domain, $port);
 
             if($count){
-                log_console(tr('Added ":count" hostnames', array(':count' => $count)), 'green');
+                log_console(tr('Added ":count" domains', array(':count' => $count)), 'green');
 
             }else{
-                log_console(tr('Added no hostnames, hostname was probably already registered'), 'yellow');
+                log_console(tr('Added no domains, domain was probably already registered'), 'yellow');
             }
 
             die();
 
         case 'unregister':
-            $hostname = cli_argument(1);
+            $domain = cli_argument(1);
             $port     = cli_argument(2);
             cli_no_arguments_left();
 
-            $count = ssh_remove_known_host($hostname, $port);
+            $count = ssh_remove_known_host($domain, $port);
 
             if($count){
-                log_console(tr('Removed ":count" hostnames', array(':count' => $count)), 'green');
+                log_console(tr('Removed ":count" domains', array(':count' => $count)), 'green');
 
             }else{
-                log_console(tr('Removed no hostnames, hostname was probably not registered'), 'yellow');
+                log_console(tr('Removed no domains, domain was probably not registered'), 'yellow');
             }
 
             die();
@@ -185,22 +185,22 @@ try{
             $count = ssh_rebuild_known_hosts(FORCE);
 
             if($count){
-                log_console(tr('Added ":count" hostnames', array(':count' => $count)), 'green');
+                log_console(tr('Added ":count" domains', array(':count' => $count)), 'green');
 
             }else{
-                log_console(tr('Added no hostnames, known_hosts file probably contains all hostnames from the `ssh_fingerprints` table'), 'yellow');
+                log_console(tr('Added no domains, known_hosts file probably contains all domains from the `ssh_fingerprints` table'), 'yellow');
             }
 
             die();
 
         case '':
-            throw new bException(tr('No method or hostname specified'), 'no-method');
+            throw new bException(tr('No method or domain specified'), 'no-method');
     }
 
 }catch(Exception $e){
     switch($e->getCode()){
         case 'not-found':
-            throw new bException(tr('ssh-keyscan found no public keys for hostname ":hostname" on port ":port", are hostname and port correct?', array(':hostname' => $hostname, ':port' => ssh_get_port($port))), 'warning/not-found');
+            throw new bException(tr('ssh-keyscan found no public keys for domain ":domain" on port ":port", are domain and port correct?', array(':domain' => $domain, ':port' => ssh_get_port($port))), 'warning/not-found');
     }
 }
 
@@ -210,12 +210,12 @@ try{
 $background    = cli_argument('-b,--background');
 $function      = not_empty(cli_argument('-f,--function'), 'passthru');
 $identity_file = cli_argument('-i,--identity-file');
-$hostname      = cli_method();
+$domain      = cli_method();
 $port          = cli_method(1);
 $commands      = cli_argument(1);
 
-if(empty($hostname)){
-    throw new bException(tr('No hostname specified'), 'warning/not-specified');
+if(empty($domain)){
+    throw new bException(tr('No domain specified'), 'warning/not-specified');
 }
 
 if(!empty($port)){
@@ -235,8 +235,8 @@ if(empty($commands)){
 }
 
 try{
-    $hostname = servers_like($hostname);
-    $server   = array('hostname'         => $hostname,
+    $domain = servers_like($domain);
+    $server   = array('domain'           => $domain,
                       'force_terminal'   => isset_get($force_terminal),
                       'disable_terminal' => isset_get($disable_terminal),
                       'commands'         => $commands,
@@ -247,10 +247,10 @@ try{
 }catch(Exception $e){
     switch($e->getCode()){
         case 'multiple':
-            throw new bException(tr('Specified hostname ":hostname" matched multiple registered servers, please be more specific', array(':hostname' => $hostname)), 'warning/multiple');
+            throw new bException(tr('Specified domain ":domain" matched multiple registered servers, please be more specific', array(':domain' => $domain)), 'warning/multiple');
 
         case 'not-exist':
-            throw new bException(tr('Specified hostname ":hostname" matched no registered servers', array(':hostname' => $hostname)), 'warning/not-exist');
+            throw new bException(tr('Specified domain ":domain" matched no registered servers', array(':domain' => $domain)), 'warning/not-exist');
 
         default:
             throw $e;
