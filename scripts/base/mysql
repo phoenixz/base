@@ -72,7 +72,6 @@ load_libs('mysql,mysqlr');
 cli_only();
 
 $all       = cli_argument('--all');
-$type      = cli_argument('-T', true, cli_argument('--type', true));
 $connector = cli_argument('--connector', true);
 $databases = cli_argument('--databases', 'all');
 
@@ -191,9 +190,7 @@ switch(cli_method()){
     case 'change':
         // FALLTHROUGH
     case 'alter':
-        $type = cli_argument(1);
-
-        switch($type){
+        switch(cli_argument(1)){
             case 'charset':
                 // FALLTHROUGH
             case 'default-charset':
@@ -227,9 +224,11 @@ switch(cli_method()){
         break;
 
     case 'list':
-        $type = cli_argument(1);
+        switch(cli_method(1)){
+            case 'timzeone':
+                // FALLTHROUGH
 
-        switch($type){
+            case 'timzeones':
             case 'db':
                 // FALLTHROUGH
             case 'dbs':
@@ -340,10 +339,10 @@ switch(cli_method()){
                 break;
 
             case '':
-                throw new bException(tr('No type specified, please use -T or --type'), 'not-specified');
+                throw new bException(tr('No sub method specified for method ":method"', array(':method' => cli_method())), 'not-specified');
 
             default:
-                throw new bException(tr('Unknown type ":type" specified', array(':type' => $type)), 'unknown');
+                throw new bException(tr('Unknown sub method ":submethod" specified for method ":method"', array(':method' => cli_method(), ':submethod' => cli_method(1))), 'unknown-method');
         }
 
         break;
