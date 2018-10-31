@@ -769,7 +769,7 @@ function sql_columns($source, $columns){
 //
 //        foreach($filter as $item){
 //            if(!isset($source[$item])){
-//                throw new bException('sql_set(): Specified filter item "'.str_log($item).'" was not found in source', 'notfound');
+//                throw new bException('sql_set(): Specified filter item "'.str_log($item).'" was not found in source', 'not-found');
 //            }
 //        }
 //
@@ -946,7 +946,7 @@ function sql_unique_id($table, $column = 'id', $max = 10000000, $connector = nul
             }
         }
 
-        throw new bException('sql_unique_id(): Could not find a unique id in "'.$maxretries.'" retries', 'notfound');
+        throw new bException('sql_unique_id(): Could not find a unique id in "'.$maxretries.'" retries', 'not-found');
 
     }catch(bException $e){
         throw new bException('sql_unique_id(): Failed', $e);
@@ -1860,7 +1860,7 @@ function sql_test_tunnel($server){
                                                   'user'       => $server['db_username'],
                                                   'pass'       => $server['db_password'],
                                                   'ssh_tunnel' => array('source_port' => $port,
-                                                                        'hostname'    => $server['hostname'])));
+                                                                        'domain'      => $server['domain'])));
 
         sql_get('SELECT TRUE', true, null, $connector_name);
 
