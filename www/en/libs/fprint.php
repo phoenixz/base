@@ -16,9 +16,10 @@
  */
 function fprint_library_init(){
     try{
-        if(!file_exists('/usr/sbin/fprintd')){
-            throw new bException(tr('fprint_library_init(): fprintd application data not found, it it probably is not installed. Please fix this by executing "sudo apt-get install fprintd" on the command line'), 'install');
+        if(!file_exists('/var/lib/fprint')){
+            throw new bException(tr('fprint_library_init(): fprintd application data directory "/var/lib/fprint" not found, it it probably is not installed. Please fix this by executing "sudo apt-get install fprintd" on the command line'), 'install');
         }
+
 
         load_config('fprint');
 
