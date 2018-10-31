@@ -112,8 +112,6 @@ function email_servers_validate($email_server){
  *
  * This function will validate all relevant fields in the specified $domain array
  *
- * This function will generate HTML for an HTML select box using html_select() and fill it with the available categories
- *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
@@ -121,20 +119,9 @@ function email_servers_validate($email_server){
  * @package categories
  *
  * @param array $params The parameters required
- * @paramkey $params name
- * @paramkey $params class
- * @paramkey $params extra
- * @paramkey $params tabindex
- * @paramkey $params empty
- * @paramkey $params none
- * @paramkey $params selected
- * @paramkey $params parents_id
- * @paramkey $params status
- * @paramkey $params orderby
- * @paramkey $params resource
  * @return string HTML for a categories select box within the specified parameters
  */
-function emails_servers_validate_domain($domain){
+function email_servers_validate_domain($domain){
     try{
         load_libs('validate,seo,customers');
 
@@ -158,9 +145,17 @@ function emails_servers_validate_domain($domain){
             $v->setError(tr('The domain ":name" is already registered on this email server'. array(':name' => $domain['name'])));
         }
 
-        $domain['seoname'] = seo_unique($domain['name'], 'domains', $domain['id']);
+        if($email_server['description']){
+            $v->hasMinChars($email_server['description'], 16, tr('Please specify at least 16 characters for a description'));
+            $v->hasMaxChars($email_server['description'], 2048, tr('Please specify no more than 2047 characters for a description'));
+
+        }else{
+            $email_server['description'] = null;
+        }
 
         $v->isValid();
+
+        $domain['seoname'] = seo_unique($domain['name'], 'domains', $domain['id']);
 
         return $domain;
 
@@ -172,10 +167,72 @@ function emails_servers_validate_domain($domain){
             $server   = servers_get($domain['server']);
             $domain = not_empty($servers[$domain['server']], $domain['server']);
 
-            throw new bException(tr('emails_servers_validate_domain(): Specified email server ":server" (server domain ":domain") does not have a "mail" database', array(':server' => $domain, ':domain' => $server['domain'])), 'not-exist');
+            throw new bException(tr('email_servers_validate_domain(): Specified email server ":server" (server domain ":domain") does not have a "mail" database', array(':server' => $domain, ':domain' => $server['domain'])), 'not-exist');
         }
 
-        throw new bException(tr('emails_servers_validate_domain(): Failed'), $e);
+        throw new bException(tr('email_servers_validate_domain(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * Validate an email account
+ *
+ * This function will validate all relevant fields in the specified $domain array
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package categories
+ *
+ * @param array $params The parameters required
+ * @return string HTML for a categories select box within the specified parameters
+ */
+function email_servers_validate_account($domain){
+    try{
+        load_libs('validate,seo,customers');
+
+        $v = new validate_form($domain, 'id,email,description');
+        $v->isNotEmpty($domain['email'], tr('Please specify a domain name'));
+        $v->hasMaxChars($domain['email'], 120, tr('Please specify a domain of less than 64 characters'));
+        $v->isFilter($domain['email'], FILTER_VALIDATE_EMAIL, tr('Please specify a valid email address'));
+
+        $v->isValid();
+
+        $exists = sql_get('SELECT `id` FROM `domains` WHERE `name` = :name LIMIT 1', true, array(':name' => $domain['name']));
+
+        if($exists){
+            $v->setError(tr('The domain ":name" is already registered on this email server'. array(':name' => $domain['name'])));
+        }
+
+        if($email_server['description']){
+            $v->hasMinChars($email_server['description'], 16, tr('Please specify at least 16 characters for a description'));
+            $v->hasMaxChars($email_server['description'], 2048, tr('Please specify no more than 2047 characters for a description'));
+
+        }else{
+            $email_server['description'] = null;
+        }
+
+        $v->isValid();
+
+        $domain['seoname'] = seo_unique($domain['name'], 'domains', $domain['id']);
+
+        return $domain;
+
+    }catch(Exception $e){
+        if($e->getCode() == '1049'){
+            load_libs('servers');
+
+            $servers  = servers_list_domains($domain['server']);
+            $server   = servers_get($domain['server']);
+            $domain = not_empty($servers[$domain['server']], $domain['server']);
+
+            throw new bException(tr('email_servers_validate_account(): Specified email server ":server" (server domain ":domain") does not have a "mail" database', array(':server' => $domain, ':domain' => $server['domain'])), 'not-exist');
+        }
+
+        throw new bException(tr('email_servers_validate_account(): Failed'), $e);
     }
 }
 
@@ -239,6 +296,69 @@ function email_servers_select($params = null){
 
     }catch(Exception $e){
         throw new bException('email_servers_select(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return HTML for a email server domain select box
+ *
+ * This function will generate HTML for an HTML select box using html_select() and fill it with the available email server domains
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package email_servers
+ *
+ * @param array $params The parameters required
+ * @paramkey $params name
+ * @paramkey $params class
+ * @paramkey $params extra
+ * @paramkey $params tabindex
+ * @paramkey $params empty
+ * @paramkey $params none
+ * @paramkey $params selected
+ * @paramkey $params parents_id
+ * @paramkey $params status
+ * @paramkey $params orderby
+ * @paramkey $params resource
+ * @return string HTML for a email_servers select box within the specified parameters
+ */
+function email_servers_select_domain($params = null){
+    try{
+        array_ensure($params);
+        array_default($params, 'name'    , 'seodomain');
+        array_default($params, 'class'   , 'form-control');
+        array_default($params, 'selected', null);
+        array_default($params, 'status'  , null);
+        array_default($params, 'empty'   , tr('No domains available'));
+        array_default($params, 'none'    , tr('Select a domain'));
+        array_default($params, 'tabindex', 0);
+        array_default($params, 'extra'   , 'tabindex="'.$params['tabindex'].'"');
+        array_default($params, 'orderby' , '`name`');
+
+        if($params['status'] !== false){
+            $where[] = ' `status` '.sql_is($params['status']).' :status ';
+            $execute[':status'] = $params['status'];
+        }
+
+        if(empty($where)){
+            $where = '';
+
+        }else{
+            $where = ' WHERE '.implode(' AND ', $where).' ';
+        }
+
+        $query              = 'SELECT `seoname`, `name` FROM `domains` '.$where.' ORDER BY '.$params['orderby'];
+        $params['resource'] = sql_query($query, $execute);
+        $retval             = html_select($params);
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('email_servers_select_domain(): Failed', $e);
     }
 }
 
@@ -340,6 +460,46 @@ function email_servers_update_password($email, $password){
 
     }catch(Exception $e){
         throw new bException('email_servers_update_password(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return an array with the sizes for all mail boxes for the specified domain on the specified mail server
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package email-servers
+ *
+ * @param mixed $servers
+ * @param mixed $servers
+ * @return array An array with mailbox => bytes format
+ */
+function email_servers_get_domain_mailbox_sizes($server, $domain){
+    try{
+        if(!filter_var($domain, FILTER_VALIDATE_DOMAIN)){
+            throw new bException(tr('email_servers_get_domain_mailbox_sizes(): Specified domain "" is not a valid domain', array(':domain' => $domain)), $e);
+        }
+
+        $retval  = array();
+        $results = servers_exec($server, 'sudo find /var/mail/vhosts/'.$domain.'/ -type d -maxdepth 1 -exec du -s {} \;');
+        $total   = array_shift($results);
+
+        foreach($results as $result){
+            $result = trim($result);
+            $retval[str_rfrom($result, '/')] = (str_until($result, "\t") * 1024);
+        }
+
+        ksort($retval);
+        $retval['--total--'] = (str_until($total, "\t") * 1024);
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('email_servers_get_domain_mailbox_sizes(): Failed', $e);
     }
 }
 ?>
