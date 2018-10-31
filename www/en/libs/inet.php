@@ -108,7 +108,7 @@ function is_ipv6($version = null){
 function inet_test_host_port($host, $port, $timeout = 5, $exception = false){
     try{
         if(!is_natural($port) or ($port > 65535)){
-            throw new bException(tr('inet_test_host_port(): Specified port ":port" is invalid, please specify a natural number 1 - 65535', array(':port' => $port)), $e);
+            throw new bException(tr('inet_test_host_port(): Specified port ":port" is invalid, please specify a natural number 1 - 65535', array(':port' => $port)), 'invalid');
         }
 
         if(!filter_var($host, FILTER_VALIDATE_IP)){
@@ -136,7 +136,7 @@ function inet_test_host_port($host, $port, $timeout = 5, $exception = false){
             if(strstr($data, 'connection refused')){
                 if($exception){
                     $e->setCode('connect-failure');
-                    $e = new bException(tr('inet_test_host_port(): Failed to connect to specified host:port ":host::port"', array(':host' => $host, ':port' => $port)), $e);
+                    throw new bException(tr('inet_test_host_port(): Failed to connect to specified host:port ":host:%port"', array(':host' => $host, '%port' => $port)), $e);
                 }
 
                 return false;
@@ -335,12 +335,13 @@ function url_remove_keys($url, $keys){
  *
  * See http://en.wikipedia.org/wiki/List_of_DNS_record_types for more information
  */
+// :TODO: OBSOLETE, SEE DIG LIBRARY FOR NEW FUNCTIONS
 function inet_dig($domain, $section = false){
     try{
         $data   = str_from(shell_exec('dig '.cfm($domain).' ANY'), 'ANSWER: ');
 
         if(str_until($data, ',') == '0'){
-            throw new bException('inet_dig(): Specified domain "'.str_log($domain).'" was not found', 'notfound');
+            throw new bException('inet_dig(): Specified domain "'.str_log($domain).'" was not found', 'not-found');
         }
 
         $data   = str_cut($data, "ANSWER SECTION:\n", "\n;;");
@@ -610,19 +611,13 @@ function inet_port_available($port, $ip = '0.0.0.0'){
         $ip   = inet_validate_ip($ip);
         $port = inet_validate_port($port);
 
-        if($ip){
-            $results = safe_exec('sudo netstat -peanut | grep '.$ip.':'.$port, '0,1');
-
-        }else{
-            $results = safe_exec('sudo netstat -peanut | grep :'.$port, '0,1');
-        }
+        $results = safe_exec('sudo netstat -peanut | grep :'.$port, '0,1');
 
         foreach($results as $result){
-            $result = substr($result, 21);
-            $result = str_until($result, ' ');
+            preg_match_all('/ (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d{1,5}) /', $result, $matches);
 
-            $found_ip   = str_until($result, ':');
-            $found_port = str_from($result , ':');
+            $found_ip   = $matches[1][0];
+            $found_port = $matches[2][0];
 
             if($found_port == $port){
                 if(!$ip or ($ip == $found_ip) or ($found_ip == '0.0.0.0')){
