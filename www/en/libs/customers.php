@@ -454,7 +454,7 @@ function customers_get($customer, $column = null, $status = null, $categories_id
                                ON        `geo_cities`.`id`    = `customers`.`cities_id`
 
                                LEFT JOIN `categories`
-                               ON        `categories`.`id`    = `customers`.`categories_id` '.$where, $execute, 'core');
+                               ON        `categories`.`id`    = `customers`.`categories_id` '.$where, $execute, null, 'core');
         }
 
         return $retval;
