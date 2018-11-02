@@ -28,6 +28,7 @@
  */
 function services_library_init(){
     try{
+        load_libs('servers');
         load_config('services');
 
     }catch(Exception $e){
@@ -68,6 +69,13 @@ function services_scan($server = null){
         /*
          * Scan the server
          */
+        $server   = servers_get($server);
+        $services = services_list();
+
+        foreach($services as $service){
+            $results = servers_exec();
+        }
+
 
         services_update_server($server, $services);
         return 1;
@@ -230,6 +238,70 @@ function services_add($server, $service){
 
     }catch(Exception $e){
         throw new bException('services_add(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Return HTML for a services select box
+ *
+ * This function will generate HTML for an HTML select box using html_select() and fill it with the available services
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @provider Function reference
+ * @package services
+ * @see html_select()
+ *
+ * @param array $params The parameters required
+ * @paramkey $params name
+ * @paramkey $params class
+ * @paramkey $params extra
+ * @paramkey $params tabindex
+ * @paramkey $params empty
+ * @paramkey $params none
+ * @paramkey $params selected
+ * @paramkey $params parents_id
+ * @paramkey $params status
+ * @paramkey $params orderby
+ * @paramkey $params resource
+ * @return string HTML for a services select box within the specified parameters
+ */
+function services_select($params = null){
+    try{
+        array_ensure($params);
+        array_default($params, 'name'    , 'seoservice');
+        array_default($params, 'class'   , 'form-control');
+        array_default($params, 'selected', null);
+        array_default($params, 'status'  , null);
+        array_default($params, 'empty'   , tr('No services available'));
+        array_default($params, 'none'    , tr('Select a service'));
+        array_default($params, 'tabindex', 0);
+        array_default($params, 'extra'   , 'tabindex="'.$params['tabindex'].'"');
+        array_default($params, 'orderby' , '`domain`');
+
+        if($params['status'] !== false){
+            $where[] = ' `status` '.sql_is($params['status']).' :status ';
+            $execute[':status'] = $params['status'];
+        }
+
+        if(empty($where)){
+            $where = '';
+
+        }else{
+            $where = ' WHERE '.implode(' AND ', $where).' ';
+        }
+
+        $query              = 'SELECT `seoname`, `name` FROM `services` '.$where.' ORDER BY '.$params['orderby'];
+        $params['resource'] = sql_query($query, $execute, 'core');
+        $retval             = html_select($params);
+
+        return $retval;
+
+    }catch(Exception $e){
+        throw new bException('services_select(): Failed', $e);
     }
 }
 ?>
