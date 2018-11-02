@@ -66,7 +66,7 @@ try{
 
             if(!cli_pidgrep($tunnel['pid'])){
                 $server     = servers_get($connector['ssh_tunnel']['hostname']);
-                $registered = ssh_is_registered($server['hostname'], $server['port']);
+                $registered = ssh_host_is_known($server['hostname'], $server['port']);
 
                 if($registered === false){
                     throw new bException(tr('sql_connect(): Connection refused for host ":hostname" because the tunnel process was canceled due to missing server fingerprints in the ROOT/data/ssh/known_hosts file and `ssh_fingerprints` table. Please register the server first', array(':hostname' => $connector['ssh_tunnel']['hostname'])), $e);

@@ -158,9 +158,28 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
                     break;
 
                 default:
+                    if(ssh_host_is_known($server['domain'], $server['port']) === false){
+                        /*
+                         * There are no fingerprints availabe in either the
+                         * `ssh_fingerprints` table or known_hosts file
+                         */
+                        $e->setCode('host-verification-failed');
+                        throw new bException(tr('ssh_exec(): The domain ":domain" has no fingerprints available in neither the known_hosts file nor `ssh_fingerprints`', array(':domain' => $server['domain'])), $e);
+
+                    }elseif(is_numeric(ssh_host_is_known($server['domain'], $server['port']))){
+                        /*
+                         * There are no fingerprints availabe in the known_hosts
+                         * file, but they were in the `ssh_fingerprints` table.
+                         * The fingerprints have been added to the known_hosts
+                         * file so we can retry the command.
+                         */
+                        log_console(tr('Retrying execution of command ":command"', array(':command' => $server['command'])), 'yellow');
+                        return ssh_exec($server, $commands, $background, $function, $ok_exitcodes);
+                    }
+
                     $data = $e->getData();
 
-                    if($data){
+                    if(($function !== 'passthru') and $data){
                         foreach($data as $line){
                             /*
                              * SSH key authentication failed
@@ -200,7 +219,6 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
                                             ssh_rebuild_known_hosts();
                                             return ssh_exec($server, $commands, $background, $function, $ok_exitcodes);
                                         }
-
 
                                         /*
                                          * Host fingerprints are not available, fail
@@ -302,8 +320,15 @@ function ssh_build_command(&$server = null, $ssh_command = 'ssh'){
         /*
          * Get default SSH arguments and create basic SSH command with options
          */
-        $server  = array_merge_null($_CONFIG['ssh']['arguments'], $server);
-        $command = $ssh_command.ssh_build_options(isset_get($server['options']));
+        $server = array_merge_null($_CONFIG['ssh']['arguments'], $server);
+
+        if(empty($server['password'])){
+            $command = $ssh_command.ssh_build_options(isset_get($server['options']));
+
+        }else{
+            $command .= ' SSHPASS="$PASSWORD" sshpass -e '.$ssh_command.ssh_build_options(isset_get($server['options']));
+showdie($command);
+        }
 
         /*
          * "tunnel" option requires (and automatically assumes) no_command, background, and remote_connect
@@ -1129,7 +1154,7 @@ function ssh_get_fingerprints($domain, $port){
         $port    = ssh_get_port($port);
         $retval  = array();
         $results = safe_exec('ssh-keyscan -p '.$port.' '.$domain);
-
+show($results);
         foreach($results as $result){
             if(substr($result, 0, 1) === '#') continue;
 
@@ -1219,7 +1244,7 @@ function ssh_rebuild_known_hosts($clear = false){
  * @params boolean $auto_register If set to true, if the domain is not specified in the ROOT/data/ssh/known_hosts file but is available in the ssh_fingerprints table, then the function will automatically add the fingerprints to the ROOT/data/ssh/known_hosts file
  * @return boolean True if the specified domain:port is registered in the ROOT/data/ssh/known_hosts file
  */
-function ssh_is_registered($domain, $port, $auto_register = true){
+function ssh_host_is_known($domain, $port, $auto_register = true){
     try{
         file_ensure_file(ROOT.'data/ssh/known_hosts', 0640, 0750);
 
@@ -1246,10 +1271,11 @@ function ssh_is_registered($domain, $port, $auto_register = true){
          * Fingerprints are in the ssh_fingerprints table, but not in the
          * known_hosts file, and we can auto register
          */
+        log_console(tr('The host ":domain::port" has no SSH key fingerprint in the ROOT/data/ssh/known_hosts file, but the keys were found in the ssh_fingerprints table. Rebuilding known_hosts file', array(':domain' => $domain, ':port' => $port)), 'yellow');
         return ssh_add_known_host($domain, $port);
 
     }catch(Exception $e){
-        throw new bException('ssh_is_registered(): Failed', $e);
+        throw new bException('ssh_host_is_known(): Failed', $e);
     }
 }
 
