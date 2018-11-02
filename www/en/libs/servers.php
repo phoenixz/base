@@ -248,8 +248,8 @@ function servers_insert($server){
                    array(':status'                  => ($server['ssh_accounts_id'] ? 'testing' : null),
                          ':createdby'               => isset_get($_SESSION['user']['id']),
                          ':meta_id'                 => meta_action(),
-                         ':domain'                => $server['domain'],
-                         ':seodomain'             => $server['seodomain'],
+                         ':domain'                  => $server['domain'],
+                         ':seodomain'               => $server['seodomain'],
                          ':port'                    => $server['port'],
                          ':database_accounts_id'    => $server['database_accounts_id'],
                          ':cost'                    => $server['cost'],
@@ -298,8 +298,8 @@ function servers_update($server){
         sql_query('UPDATE `servers`
 
                    SET    `status`                  = :status,
-                          `domain`                = :domain,
-                          `seodomain`             = :seodomain,
+                          `domain`                  = :domain,
+                          `seodomain`               = :seodomain,
                           `port`                    = :port,
                           `database_accounts_id`    = :database_accounts_id,
                           `cost`                    = :cost,
@@ -406,6 +406,7 @@ function servers_like($domain){
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @provider Function reference
  * @package servers
+ * @see html_select()
  *
  * @param array $params The parameters required
  * @paramkey $params name
@@ -654,7 +655,11 @@ function servers_exec($server, $commands = null, $background = false, $function 
 
         if(empty($server['identity_file'])){
             if(empty($server['ssh_key'])){
-                throw new bException(tr('servers_exec(): The specified server ":server" has no identity file or SSH key available', array(':server' => $server['domain'])), 'missing-data');
+                if(empty($server['password'])){
+                    throw new bException(tr('servers_exec(): The specified server ":server" has no identity file or SSH key available and no password was specified', array(':server' => $server['domain'])), 'missing-data');
+                }
+
+
             }
 
             /*
@@ -1538,6 +1543,47 @@ function servers_scan_domains($server = null){
 
     }catch(Exception $e){
 		throw new bException('servers_scan_domains(): Failed', $e);
+	}
+}
+
+
+
+/*
+ * Returns if the specified account has SSH access on the specified server
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package servers
+ *
+ * @param mixed $server The server to be checked
+ * @param mixed $account This is either an SSH accounts id or name, or if $password is specified, just a normal username on that server (for example; root)
+ * @param mixed $password If specified, the specified account will not be taken from the `ssh_accounts` table, but will be regarded as a username on the server which will be used in combination with the specified password
+ * @return boolean True if the specified account has access on the specified server
+ */
+function servers_check_ssh_access($server, $account, $password = null){
+    try{
+        $server['username'] = $account;
+
+        if($password){
+            $server['password'] = $password;
+            $results = servers_exec($server);
+
+        }else{
+            $account = ssh_get_account($account);
+
+            if(!$account){
+                throw new bException(tr('servers_check_ssh_access(): The specified account "" does not exist in the `ssh_accounts` table', array(':account' => $account)), 'not-exist');
+            }
+
+            $results = servers_exec($server);
+        }
+
+showdie($results);
+
+    }catch(Exception $e){
+		throw new bException('servers_check_ssh_access(): Failed', $e);
 	}
 }
 ?>
