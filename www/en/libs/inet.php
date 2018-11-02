@@ -425,15 +425,6 @@ function inet_dig($domain, $section = false){
 
 
 /*
- * Here be wrapper monsters for obsolete functions
- */
-function get_domain($strip = array('www', 'dev', 'm')){
-    return inet_get_domain($strip);
-}
-
-
-
-/*
  *
  */
 function inet_get_client_data(){
@@ -673,5 +664,15 @@ function inet_get_available_port($ip = '0.0.0.0', $lowest = 1025, $retries = 10)
     }catch(Exception $e){
         throw new bException('inet_get_available_port(): Failed', $e);
     }
+}
+
+
+
+/*
+ * OBSOLETE
+ * Here be wrapper monsters for obsolete functions
+ */
+function get_domain($strip = array('www', 'dev', 'm')){
+    return inet_get_domain($strip);
 }
 ?>
