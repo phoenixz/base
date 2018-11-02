@@ -252,6 +252,9 @@ try{
         case 'not-exist':
             throw new bException(tr('Specified domain ":domain" matched no registered servers', array(':domain' => $domain)), 'warning/not-exist');
 
+        case 'host-verification-failed':
+            throw new bException(tr('Specified domain ":domain" failed host key verification. Register the server first', array(':domain' => $domain)), 'warning/host-verification-failed');
+
         default:
             throw $e;
     }
