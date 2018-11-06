@@ -158,6 +158,23 @@ sql_index_exists('domains_servers', 'PRIMARY',  '!ALTER TABLE `domains_servers` 
 sql_query('ALTER TABLE `domains_servers` MODIFY COLUMN `id` INT(11) NOT NULL AUTO_INCREMENT;');
 
 /*
+ * Fix meta_id
+ */
+$users  = sql_query('SELECT `id` FROM `users`');
+$update = sql_prepare('UPDATE `users` SET `meta_id` = :meta_id WHERE `id` = :id');
+
+log_console(tr('Setting up meta_id for users table'), '', false);
+
+while($users_id = sql_fetch($users, true)){
+    cli_dot(1);
+    $meta_id = meta_action();
+    $update->execute(array(':id'      => $users_id,
+                           ':meta_id' => $meta_id));
+}
+
+cli_dot(false);
+
+/*
  * Update domains table with domains from servers table
  */
 $servers = sql_query('SELECT `id`, `domain`, `seodomain`, `ipv4` FROM `servers`');
