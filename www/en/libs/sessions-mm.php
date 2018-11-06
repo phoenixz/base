@@ -25,6 +25,7 @@
  */
 function sessions_mm_library_init(){
     try{
+under_construction();
 
     }catch(Exception $e){
         throw new bException('sessions_mm_library_init(): Failed', $e);
