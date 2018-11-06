@@ -125,6 +125,7 @@ sql_query('ALTER TABLE `email_servers` MODIFY `createdby` INT(11) NULL DEFAULT N
 /*
  * Add missing required columns to domains_servers
  */
+sql_query('ALTER TABLE `domains_servers` MODIFY COLUMN `id` INT(11) NOT NULL;');
 sql_index_exists('domains_servers', 'PRIMARY'              ,  'ALTER TABLE `domains_servers` DROP PRIMARY KEY');
 sql_index_exists('domains_servers', 'domains_id_servers_id', '!ALTER TABLE `domains_servers` ADD UNIQUE KEY `domains_id_servers_id` (`domains_id`, `servers_id`)');
 
@@ -151,6 +152,10 @@ sql_index_exists ('users', 'meta_id', '!ALTER TABLE `users` ADD KEY    `meta_id`
 
 sql_foreignkey_exists('users', 'fk_users_createdby', '!ALTER TABLE `users` ADD CONSTRAINT `fk_users_createdby` FOREIGN KEY (`createdby`) REFERENCES `users` (`id`) ON DELETE RESTRICT;');
 sql_foreignkey_exists('users', 'fk_users_meta_id'  , '!ALTER TABLE `users` ADD CONSTRAINT `fk_users_meta_id`   FOREIGN KEY (`meta_id`)   REFERENCES `meta`  (`id`) ON DELETE RESTRICT;');
+
+sql_query('TRUNCATE `domains_servers`');
+sql_index_exists('domains_servers', 'PRIMARY',  '!ALTER TABLE `domains_servers` ADD PRIMARY KEY (`id`);');
+sql_query('ALTER TABLE `domains_servers` MODIFY COLUMN `id` INT(11) NOT NULL AUTO_INCREMENT;');
 
 /*
  * Update domains table with domains from servers table
