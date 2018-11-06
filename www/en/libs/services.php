@@ -280,7 +280,7 @@ function services_select($params = null){
         array_default($params, 'none'    , tr('Select a service'));
         array_default($params, 'tabindex', 0);
         array_default($params, 'extra'   , 'tabindex="'.$params['tabindex'].'"');
-        array_default($params, 'orderby' , '`domain`');
+        array_default($params, 'orderby' , '`name`');
 
         if($params['status'] !== false){
             $where[] = ' `status` '.sql_is($params['status']).' :status ';
