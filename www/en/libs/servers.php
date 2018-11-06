@@ -314,21 +314,21 @@ function servers_update($server){
 
                    WHERE  `id`                      = :id',
 
-                   array(':id'                      => $server['id'],
+                   array(':id'                      =>  $server['id'],
                          ':status'                  => ($server['ssh_accounts_id'] ? 'testing' : null),
-                         ':domain'                => $server['domain'],
-                         ':seodomain'             => $server['seodomain'],
-                         ':port'                    => $server['port'],
-                         ':database_accounts_id'    => $server['database_accounts_id'],
-                         ':cost'                    => $server['cost'],
-                         ':interval'                => $server['interval'],
-                         ':bill_duedate'            => $server['bill_duedate'],
-                         ':providers_id'            => $server['providers_id'],
-                         ':customers_id'            => $server['customers_id'],
-                         ':ssh_accounts_id'         => $server['ssh_accounts_id'],
-                         ':allow_sshd_modification' => $server['allow_sshd_modification'],
-                         ':description'             => $server['description'],
-                         ':ipv4'                    => $server['ipv4']));
+                         ':domain'                  =>  $server['domain'],
+                         ':seodomain'               =>  $server['seodomain'],
+                         ':port'                    =>  $server['port'],
+                         ':database_accounts_id'    =>  $server['database_accounts_id'],
+                         ':cost'                    =>  $server['cost'],
+                         ':interval'                =>  $server['interval'],
+                         ':bill_duedate'            =>  $server['bill_duedate'],
+                         ':providers_id'            =>  $server['providers_id'],
+                         ':customers_id'            =>  $server['customers_id'],
+                         ':ssh_accounts_id'         =>  $server['ssh_accounts_id'],
+                         ':allow_sshd_modification' =>  $server['allow_sshd_modification'],
+                         ':description'             =>  $server['description'],
+                         ':ipv4'                    =>  $server['ipv4']));
 
         servers_update_domains($server['id'], $server['domains']);
         return $server;
