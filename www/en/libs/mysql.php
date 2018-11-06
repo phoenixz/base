@@ -218,7 +218,7 @@ function mysql_get_database($db_name){
                                        `databases`.`error`,
 
                                        `servers`.`id` AS `servers_id`,
-                                       `servers`.`hostname`,
+                                       `servers`.`domain`,
                                        `servers`.`ssh_port`,
                                        `servers`.`replication_status` AS `servers_replication_status`,
                                        `servers`.`replication_lock`   AS `server_replication_lock`,

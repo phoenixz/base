@@ -2,5 +2,5 @@
 /*
  * MySQL Replicator Configuration
  */
-$_CONFIG['mysqlr']                                                               = array('hostname' => '');
+$_CONFIG['mysqlr']                                                               = array('domain' => '');
 ?>

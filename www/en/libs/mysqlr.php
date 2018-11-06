@@ -202,15 +202,15 @@ function mysqlr_master_replication_setup($params){
         /*
          * Validate params
          */
-        array_ensure($params, 'hostname,database');
+        array_ensure($params, 'domain,database');
 
         /*
-         * Check Slave hostname
+         * Check Slave domain
          */
-        $slave = $_CONFIG['mysqlr']['hostname'];
+        $slave = $_CONFIG['mysqlr']['domain'];
 
         if(empty($slave)){
-            throw new bException(tr('mysqlr_master_replication_setup(): MySQL configuration for replicator hostname is not set'), 'not-specified');
+            throw new bException(tr('mysqlr_master_replication_setup(): MySQL configuration for replicator domain is not set'), 'not-specified');
         }
 
         /*
@@ -224,23 +224,23 @@ function mysqlr_master_replication_setup($params){
          * Get MySQL configuration path
          */
         load_libs('ssh,servers');
-        $mysql_cnf_path = mysqlr_check_configuration_path($database['hostname']);
+        $mysql_cnf_path = mysqlr_check_configuration_path($database['domain']);
 
         /*
          * MySQL SETUP
          */
         log_console(tr('Making master setup for MySQL configuration file'), 'DOT');
-        servers_exec($database['hostname'], 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/\" '.$mysql_cnf_path);
-        servers_exec($database['hostname'], 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path);
+        servers_exec($database['domain'], 'sudo sed -i \"s/#server-id[[:space:]]*=[[:space:]]*1/server-id = '.$database['id'].'/\" '.$mysql_cnf_path);
+        servers_exec($database['domain'], 'sudo sed -i \"s/#log_bin/log_bin/\" '.$mysql_cnf_path);
 
         /*
          * The next line just have to be added one time!
          * Check if it exists, if not append
          */
-        servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database_name'].'\' '.$mysql_cnf_path.' || sudo sed -i \"/max_binlog_size[[:space:]]*=[[:space:]]*100M/a binlog_do_db = '.$database['database_name'].'\" '.$mysql_cnf_path);
+        servers_exec($database['domain'], 'grep -q -F \'binlog_do_db = '.$database['database_name'].'\' '.$mysql_cnf_path.' || sudo sed -i \"/max_binlog_size[[:space:]]*=[[:space:]]*100M/a binlog_do_db = '.$database['database_name'].'\" '.$mysql_cnf_path);
 
         log_console(tr('Restarting remote MySQL service'), 'DOT');
-        servers_exec($database['hostname'], 'sudo service mysql restart');
+        servers_exec($database['domain'], 'sudo service mysql restart');
 
         /*
          * LOCK MySQL database
@@ -249,15 +249,15 @@ function mysqlr_master_replication_setup($params){
          */
         log_console(tr('Making grant replication on remote server and locking tables'), 'DOT');
 // :FIX: There is an issue with mysql exec not executing as root
-        //$ssh_mysql_pid = mysql_exec($database['hostname'], 'GRANT REPLICATION SLAVE ON *.* TO "'.$database['replication_db_user'].'"@"localhost" IDENTIFIED BY "'.$database['replication_db_password'].'"; FLUSH PRIVILEGES; USE '.$database['database'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000);', true);
-        $ssh_mysql_pid = servers_exec($database['hostname'], 'mysql \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$database['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$database['replication_db_password'].'\'; FLUSH PRIVILEGES; USE '.$database['database_name'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000); \"', true);
+        //$ssh_mysql_pid = mysql_exec($database['domain'], 'GRANT REPLICATION SLAVE ON *.* TO "'.$database['replication_db_user'].'"@"localhost" IDENTIFIED BY "'.$database['replication_db_password'].'"; FLUSH PRIVILEGES; USE '.$database['database'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000);', true);
+        $ssh_mysql_pid = servers_exec($database['domain'], 'mysql \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -e \"GRANT REPLICATION SLAVE ON *.* TO \''.$database['replication_db_user'].'\'@\'localhost\' IDENTIFIED BY \''.$database['replication_db_password'].'\'; FLUSH PRIVILEGES; USE '.$database['database_name'].'; FLUSH TABLES WITH READ LOCK; DO SLEEP(1000000); \"', true);
 
         /*
          * Dump database
          */
         log_console(tr('Making dump of remote database'), 'DOT');
-        servers_exec($database['hostname'], 'sudo rm /tmp/'.$database['database_name'].'.sql.gz -f;');
-        servers_exec($database['hostname'], 'sudo mysqldump \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$database['database_name'].' | gzip | sudo tee /tmp/'.$database['database_name'].'.sql.gz');
+        servers_exec($database['domain'], 'sudo rm /tmp/'.$database['database_name'].'.sql.gz -f;');
+        servers_exec($database['domain'], 'sudo mysqldump \"-u'.$database['root_db_user'].'\" \"-p'.$database['root_db_password'].'\" -K -R -n -e --dump-date --comments -B '.$database['database_name'].' | gzip | sudo tee /tmp/'.$database['database_name'].'.sql.gz');
 
         /*
          * KILL LOCAL SSH process
@@ -267,7 +267,7 @@ function mysqlr_master_replication_setup($params){
         shell_exec('kill -9 '.$ssh_mysql_pid[0]);
 
         log_console(tr('Restarting remote MySQL service'), 'DOT');
-        servers_exec($database['hostname'], 'sudo service mysql restart');
+        servers_exec($database['domain'], 'sudo service mysql restart');
 
         /*
          * Delete posible LOCAL backup
@@ -281,13 +281,13 @@ function mysqlr_master_replication_setup($params){
          * Copy from local to slave server
          */
         servers_exec($slave, 'rm /tmp/'.$database['database_name'].'.sql.gz -f');
-        mysqlr_scp_database(array('hostname' => $slave), '/tmp/'.$database['database_name'].'.sql.gz', '/tmp/');
+        mysqlr_scp_database(array('domain' => $slave), '/tmp/'.$database['database_name'].'.sql.gz', '/tmp/');
         safe_exec('rm /tmp/'.$database['database_name'].'.sql.gz -f');
 
         /*
          * Get the log_file and log_pos
          */
-        $master_status        = mysql_exec($database['hostname'], 'SHOW MASTER STATUS');
+        $master_status        = mysql_exec($database['domain'], 'SHOW MASTER STATUS');
         $master_status        = explode(',', preg_replace('/\s+/', ',', $master_status[1]));
         $database['log_file'] = $master_status[0];
         $database['log_pos']  = $master_status[1];
@@ -327,12 +327,12 @@ function mysqlr_slave_replication_setup($params){
         load_libs('mysql');
 
         /*
-         * Check Slave hostname
+         * Check Slave domain
          */
-        $slave = $_CONFIG['mysqlr']['hostname'];
+        $slave = $_CONFIG['mysqlr']['domain'];
 
         if(empty($slave)){
-            throw new bException(tr('mysqlr_slave_replication_setup(): MySQL configuration for replicator hostname is not set'), 'not-specified');
+            throw new bException(tr('mysqlr_slave_replication_setup(): MySQL configuration for replicator domain is not set'), 'not-specified');
         }
 
         /*
@@ -415,8 +415,8 @@ function mysqlr_slave_replication_setup($params){
         $slave_setup .= 'MASTER_PORT='.$database['ssh_port'].', ';
         $slave_setup .= 'MASTER_LOG_FILE=\"'.$database['log_file'].'\", ';
         $slave_setup .= 'MASTER_LOG_POS='.$database['log_pos'].' ';
-        $slave_setup .= 'FOR CHANNEL \"'.$database['hostname'].'\"; ';
-        $slave_setup .= 'START SLAVE FOR CHANNEL \"'.$database['hostname'].'\";';
+        $slave_setup .= 'FOR CHANNEL \"'.$database['domain'].'\"; ';
+        $slave_setup .= 'START SLAVE FOR CHANNEL \"'.$database['domain'].'\";';
         mysql_exec($slave, $slave_setup);
 
         /*
@@ -453,12 +453,12 @@ function mysqlr_pause_replication($db, $restart_mysql = true){
         load_libs('mysql');
 
         /*
-         * Check Slave hostname
+         * Check Slave domain
          */
-        $slave = $_CONFIG['mysqlr']['hostname'];
+        $slave = $_CONFIG['mysqlr']['domain'];
 
         if(empty($slave)){
-            throw new bException(tr('mysqlr_pause_replication(): MySQL Configuration for replicator hostname is not set'), 'not-specified');
+            throw new bException(tr('mysqlr_pause_replication(): MySQL Configuration for replicator domain is not set'), 'not-specified');
         }
 
         /*
@@ -521,12 +521,12 @@ function mysqlr_resume_replication($db, $restart_mysql = true){
         load_libs('mysql');
 
         /*
-         * Check Slave hostname
+         * Check Slave domain
          */
-        $slave = $_CONFIG['mysqlr']['hostname'];
+        $slave = $_CONFIG['mysqlr']['domain'];
 
         if(empty($slave)){
-            throw new bException(tr('mysqlr_resume_replication(): MySQL Configuration for replicator hostname is not set'), 'not-specified');
+            throw new bException(tr('mysqlr_resume_replication(): MySQL Configuration for replicator domain is not set'), 'not-specified');
         }
 
         /*
@@ -631,7 +631,7 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
     try{
         array_params($server);
         array_default($server, 'server'       , '');
-        array_default($server, 'hostname'     , '');
+        array_default($server, 'domain'       , '');
         array_default($server, 'ssh_key'      , '');
         array_default($server, 'port'         , 22);
         array_default($server, 'arguments'    , '');
@@ -641,11 +641,11 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
          * If server was specified by just name, then lookup the server data in
          * the database
          */
-        if($server['hostname']){
+        if($server['domain']){
             $dbserver = sql_get('SELECT    `ssh_accounts`.`username`,
                                            `ssh_accounts`.`ssh_key`,
                                            `servers`.`id`,
-                                           `servers`.`hostname`,
+                                           `servers`.`domain`,
                                            `servers`.`port`
 
                                  FROM      `servers`
@@ -653,7 +653,7 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
                                  LEFT JOIN `ssh_accounts`
                                  ON        `ssh_accounts`.`id` = `servers`.`ssh_accounts_id`
 
-                                 WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['hostname']));
+                                 WHERE     `servers`.`domain` = :domain', array(':domain' => $server['domain']));
 
             if(!$dbserver){
                 throw new bException(tr('ssh_mysql_slave_tunnel(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
@@ -688,7 +688,7 @@ function mysqlr_slave_ssh_tunnel($server, $slave){
          * and execute autossh
          */
         safe_exec('scp '.$server['arguments'].' -P '.$_CONFIG['mysqlr']['port'].' -i '.$keyfile.' '.$keyfile.' '.$server['username'].'@'.$slave.':/data/ssh/keys/');
-        servers_exec($slave, 'autossh -p '.$server['port'].' -i /data/ssh/keys/'.$keyname.' -L '.$server['ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['hostname'].' -f -N');
+        servers_exec($slave, 'autossh -p '.$server['port'].' -i /data/ssh/keys/'.$keyname.' -L '.$server['ssh_port'].':localhost:3306 '.$server['username'].'@'.$server['domain'].' -f -N');
 
         /*
          * Delete local file key
@@ -739,10 +739,10 @@ function mysqlr_full_backup(){
         /*
          * Get all servers replicating
          */
-        $slave   = $_CONFIG['mysqlr']['hostname'];
+        $slave   = $_CONFIG['mysqlr']['domain'];
         $servers = sql_query('SELECT `id`,
-                                     `hostname`,
-                                     `seohostname`
+                                     `domain`,
+                                     `seodomain`
 
                               FROM   `servers`
 
@@ -784,7 +784,7 @@ function mysqlr_full_backup(){
                 continue;
             }
 
-            log_console(tr('Making backups of server :server', array(':server' => $server['hostname'])), 'DOT');
+            log_console(tr('Making backups of server :server', array(':server' => $server['domain'])), 'DOT');
 
             /*
              * Disable replication of each database
@@ -802,7 +802,7 @@ function mysqlr_full_backup(){
             /*
              * Create a directory for the current server inside the backup directory
              */
-            $server_backup_path = $backup_path.'/'.$server['hostname'];
+            $server_backup_path = $backup_path.'/'.$server['domain'];
             servers_exec($slave, 'sudo mkdir '.$server_backup_path);
 
             foreach($databases as $id => $name){
@@ -834,7 +834,7 @@ function mysqlr_full_backup(){
         /*
          * rsync to backup server
          */
-        servers_exec($slave, 'rsync -avze \"ssh -p '.$_CONFIG['mysqlr']['backup']['port'].'\" '.$backup_path.'/*'.' '.$_CONFIG['mysqlr']['backup']['hostname'].':'.$_CONFIG['mysqlr']['backup']['path']);
+        servers_exec($slave, 'rsync -avze \"ssh -p '.$_CONFIG['mysqlr']['backup']['port'].'\" '.$backup_path.'/*'.' '.$_CONFIG['mysqlr']['backup']['domain'].':'.$_CONFIG['mysqlr']['backup']['path']);
 
         /*
          * delete replicate backup for today
@@ -867,7 +867,7 @@ function mysqlr_scp_database($server, $source, $destnation, $from_server = false
     try{
         array_params($server);
         array_default($server, 'server'       , '');
-        array_default($server, 'hostname'     , '');
+        array_default($server, 'domain'       , '');
         array_default($server, 'ssh_key'      , '');
         array_default($server, 'port'         , 22);
         array_default($server, 'hostkey_check', false);
@@ -877,11 +877,11 @@ function mysqlr_scp_database($server, $source, $destnation, $from_server = false
          * If server was specified by just name, then lookup the server data in
          * the database
          */
-        if($server['hostname']){
+        if($server['domain']){
             $dbserver = sql_get('SELECT    `ssh_accounts`.`username`,
                                            `ssh_accounts`.`ssh_key`,
                                            `servers`.`id`,
-                                           `servers`.`hostname`,
+                                           `servers`.`domain`,
                                            `servers`.`port`
 
                                  FROM      `servers`
@@ -889,7 +889,9 @@ function mysqlr_scp_database($server, $source, $destnation, $from_server = false
                                  LEFT JOIN `ssh_accounts`
                                  ON        `ssh_accounts`.`id`  = `servers`.`ssh_accounts_id`
 
-                                 WHERE     `servers`.`hostname` = :hostname', array(':hostname' => $server['hostname']));
+                                 WHERE     `servers`.`domain`   = :domain',
+
+                                 array(':domain' => $server['domain']));
 
             if(!$dbserver){
                 throw new bException(tr('mysqlr_scp_database(): Specified server ":server" does not exist', array(':server' => $server['server'])), 'not-exist');
@@ -920,10 +922,10 @@ function mysqlr_scp_database($server, $source, $destnation, $from_server = false
         chmod($keyfile, 0400);
 
         if($from_server){
-            $command = $server['username'].'@'.$server['hostname'].':'.$source.' '.$destnation;
+            $command = $server['username'].'@'.$server['domain'].':'.$source.' '.$destnation;
 
         }else{
-            $command = $source.' '.$server['username'].'@'.$server['hostname'].':'.$destnation;
+            $command = $source.' '.$server['username'].'@'.$server['domain'].':'.$destnation;
         }
 
         /*
@@ -1090,8 +1092,8 @@ function mysqlr_get_logs($database, $limit = 50){
                                                `replicator_logs`.`databases_id`,
                                                `replicator_logs`.`message`,
 
-                                               `servers`.`hostname`,
-                                               `servers`.`seohostname`,
+                                               `servers`.`domain`,
+                                               `servers`.`seodomain`,
 
                                                `projects`.`name`
 
@@ -1138,7 +1140,7 @@ function mysqlr_monitor_database($database){
     global $_CONFIG;
 
     try{
-        $slave = $_CONFIG['mysqlr']['hostname'];
+        $slave = $_CONFIG['mysqlr']['domain'];
 
         /*
          * Validate data
@@ -1152,7 +1154,7 @@ function mysqlr_monitor_database($database){
          * This function will throw an error is this database does not exist
          */
         $database = mysql_get_database($database['databases_id']);
-        log_console(tr('Checking database :database from server :server', array(':database' => $database['database_name'], ':server' => $database['hostname'])), 'white');
+        log_console(tr('Checking database :database from server :server', array(':database' => $database['database_name'], ':server' => $database['domain'])), 'white');
 
         /*
          * Check if this db can replicate
@@ -1174,8 +1176,8 @@ function mysqlr_monitor_database($database){
         /*
          * Check if MySQL configuration still has this database
          */
-        $mysql_cnf_path = mysqlr_check_configuration_path($database['hostname']);
-        $result         = servers_exec($database['hostname'], 'grep -q -F \'binlog_do_db = '.$database['database_name'].'\' '.$mysql_cnf_path.' && echo "1" || echo "0"');
+        $mysql_cnf_path = mysqlr_check_configuration_path($database['domain']);
+        $result         = servers_exec($database['domain'], 'grep -q -F \'binlog_do_db = '.$database['database_name'].'\' '.$mysql_cnf_path.' && echo "1" || echo "0"');
 
         if(!$result[0]){
             /*
@@ -1191,7 +1193,7 @@ function mysqlr_monitor_database($database){
         /*
          * Check channel for the server database on the Replicator server
          */
-        $result = sql_get('SHOW SLAVE STATUS FOR CHANNEL :channel', array(':channel' => $database['hostname']), null, 'replicator');
+        $result = sql_get('SHOW SLAVE STATUS FOR CHANNEL :channel', array(':channel' => $database['domain']), null, 'replicator');
 
         if(empty($result)){
             /*
@@ -1217,15 +1219,15 @@ function mysqlr_monitor_database($database){
                      * Try by replicating again
                      */
                     load_libs('tasks');
-                    log_console(tr('Replication add master for database :database of server :server', array(':database' => $database['database_name'], ':server' => $database['hostname'])), 'white');
+                    log_console(tr('Replication add master for database :database of server :server', array(':database' => $database['database_name'], ':server' => $database['domain'])), 'white');
                     mysqlr_update_replication_status($database, 'preparing');
                     $task = tasks_add(array('command'     => 'base/mysql',
                                             'time_limit'  => 1200,
                                             'status'      => 'new',
-                                            'description' => tr('Add replication master of database ":database" on server ":server"', array(':database' => $database['database_name'], ':server' => $database['hostname'])),
+                                            'description' => tr('Add replication master of database ":database" on server ":server"', array(':database' => $database['database_name'], ':server' => $database['domain'])),
                                             'data'        => array('method'          => 'replication add-master',
                                                                    '--env'           => ENVIRONMENT,
-                                                                   '--hostname'      => $database['hostname'],
+                                                                   '--domain'        => $database['domain'],
                                                                    '--database'      => $database['databases_id'],
                                                                    '--force-channel' => true)));
                     mysqlr_update_replication_status($database, 'error');
@@ -1256,15 +1258,15 @@ function mysqlr_monitor_database($database){
                      * Try by replicating again
                      */
                     load_libs('tasks');
-                    log_console(tr('Replication add master for database :database of server :server', array(':database' => $database['database_name'], ':server' => $database['hostname'])), 'white');
+                    log_console(tr('Replication add master for database :database of server :server', array(':database' => $database['database_name'], ':server' => $database['domain'])), 'white');
                     mysqlr_update_replication_status($database, 'preparing');
                     $task = tasks_add(array('command'     => 'base/mysql',
                                             'time_limit'  => 1200,
                                             'status'      => 'new',
-                                            'description' => tr('Add replication master of database ":database" on server ":server"', array(':database' => $database['database_name'], ':server' => $database['hostname'])),
+                                            'description' => tr('Add replication master of database ":database" on server ":server"', array(':database' => $database['database_name'], ':server' => $database['domain'])),
                                             'data'        => array('method'          => 'replication add-master',
                                                                    '--env'           => ENVIRONMENT,
-                                                                   '--hostname'      => $database['hostname'],
+                                                                   '--domain'        => $database['domain'],
                                                                    '--database'      => $database['databases_id'],
                                                                    '--force-channel' => true)));
                     mysqlr_update_replication_status($database, 'error');
