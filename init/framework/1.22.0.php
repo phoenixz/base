@@ -125,9 +125,9 @@ sql_query('ALTER TABLE `email_servers` MODIFY `createdby` INT(11) NULL DEFAULT N
 /*
  * Add missing required columns to domains_servers
  */
-sql_query('ALTER TABLE `domains_servers` MODIFY COLUMN `id` INT(11) NOT NULL;');
-sql_index_exists('domains_servers', 'PRIMARY'              ,  'ALTER TABLE `domains_servers` DROP PRIMARY KEY');
-sql_index_exists('domains_servers', 'domains_id_servers_id', '!ALTER TABLE `domains_servers` ADD UNIQUE KEY `domains_id_servers_id` (`domains_id`, `servers_id`)');
+sql_column_exists('domains_servers', 'id'                   ,  'ALTER TABLE `domains_servers` MODIFY COLUMN `id` INT(11) NOT NULL;');
+sql_index_exists ('domains_servers', 'PRIMARY'              ,  'ALTER TABLE `domains_servers` DROP PRIMARY KEY');
+sql_index_exists ('domains_servers', 'domains_id_servers_id', '!ALTER TABLE `domains_servers` ADD UNIQUE KEY `domains_id_servers_id` (`domains_id`, `servers_id`)');
 
 sql_column_exists('domains_servers', 'id'       , '!ALTER TABLE `domains_servers` ADD COLUMN `id`        INT(11)   NOT NULL PRIMARY KEY FIRST');
 sql_column_exists('domains_servers', 'createdon', '!ALTER TABLE `domains_servers` ADD COLUMN `createdon` TIMESTAMP     NULL AFTER `id`');
