@@ -29,9 +29,9 @@ try{
     define('FORCE'      , cli_argument('-F,--force'));
     define('NOCOLOR'    , cli_argument('-C,--no-color'));
     define('TEST'       , cli_argument('-T,--test'));
-    define('LIMIT'      , cli_argument('--limit'     , true));
-    define('ALL'        , cli_argument('-A,--all'    , true));
-    define('DELETED'    , cli_argument('-d,--deleted', true));
+    define('LIMIT'      , not_empty(cli_argument('--limit', true), $_CONFIG['paging']['limit']));
+    define('ALL'        , cli_argument('-A,--all'));
+    define('DELETED'    , cli_argument('--deleted'));
     define('STATUS'     , cli_argument('-S,--status' , true));
     define('STARTDIR'   , slash(getcwd()));
 
@@ -68,15 +68,6 @@ try{
         }
 
         switch($arg){
-            case '-D':
-                // FALLTHROUGH
-            case '--debug':
-                /*
-                 * Run script in debug mode
-                 */
-                debug(true);
-                break;
-
             case '--version':
                 /*
                  * Show version information
@@ -223,11 +214,18 @@ try{
     die(1);
 }
 
+
+
+/*
+ * Something failed?
+ */
 if(isset($die)){
     $core->register['ready']     = true;
     $core->register['exit_code'] = $die;
     die($die);
 }
+
+
 
 // :TODO: Check what this does, either delete it or comment it!
 array_shift($GLOBALS['argv']);
@@ -369,6 +367,17 @@ $_SESSION['language'] = $language;
 
 
 /*
+ *
+ */
+$core->register['ready'] = true;
+
+if(cli_argument('-D,--debug')){
+    debug();
+}
+
+
+
+/*
  * Give some startup messages, if needed
  */
 if(VERBOSE){
@@ -402,11 +411,17 @@ if(ALL){
         throw new bException(tr('core::startup(): Both ALL and DELETED modes where specified, these modes are mutually exclusive'), 'invalid');
     }
 
-    log_console(tr('Showing ALL entries', 'VERBOSE/cyan'));
+    log_console(tr('Showing ALL entries'), 'VERBOSE/cyan');
 
 }elseif(DELETED){
-    log_console(tr('Showing DELETED entried', 'VERBOSE/cyan'));
+    log_console(tr('Showing DELETED entries'), 'VERBOSE/cyan');
 }
+
+if(debug()){
+    log_console(tr('Running in DEBUG mode'), 'VERBOSE/yellow');
+}
+
+
 
 /*
  * Load custom library, if available

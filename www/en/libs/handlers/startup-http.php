@@ -24,7 +24,7 @@ define('TEST'       , (getenv('TEST')                     ? 'TEST'        : null
 define('VERYVERBOSE', (getenv('VERYVERBOSE')              ? 'VERYVERBOSE' : null));
 define('VERBOSE'    , ((VERYVERBOSE or getenv('VERBOSE')) ? 'VERBOSE'     : null));
 define('QUIET'      , (getenv('QUIET')                    ? 'QUIET'       : null));
-define('LIMIT'      , (getenv('LIMIT')                    ? 'LIMIT'       : null));
+define('LIMIT'      , (getenv('LIMIT')                    ? 'LIMIT'       : $_CONFIG['paging']['limit']));
 define('ORDERBY'    , (getenv('ORDERBY')                  ? 'ORDERBY'     : null));
 define('ALL'        , (getenv('ALL')                      ? 'ALL'         : null));
 define('DELETED'    , (getenv('DELETED')                  ? 'DELETED'     : null));
