@@ -23,9 +23,10 @@ require_once(__DIR__.'/../../libs/startup.php');
 cli_only();
 load_libs('uglify');
 
-$js   = cli_argument('--js');
-$all  = cli_argument('--all') or cli_argument('-a');
-$css  = cli_argument('--css');
+$js    = cli_argument('--js');
+$all   = cli_argument('--all') or cli_argument('-a');
+$css   = cli_argument('--css');
+$force = cli_argument('--force-compress');
 
 if(TEST){
     $path = arguments();
@@ -43,19 +44,19 @@ if(TEST){
     }
 
     log_console(tr('Running compression test'), 'white');
-    uglify_js($path);
+    uglify_js($path, $force);
     log_console(tr('Finished compression test'), 'green');
 
 }else{
     if($css or $all){
         log_console(tr('Compressing only CSS files'), 'white');
-        uglify_css();
+        uglify_css(null, $force);
         log_console(tr('Finished compressing CSS files'), 'green');
     }
 
     if($js or $all){
         log_console(tr('Compressing only javascript files'), 'white');
-        uglify_js();
+        uglify_js(null, $force);
         log_console(tr('Finished compressing javascript files'), 'green');
     }
 }
