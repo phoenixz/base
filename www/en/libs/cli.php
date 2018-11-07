@@ -409,6 +409,7 @@ function cli_current_script(){
  * Returns true if the startup script is already running
  */
 function cli_run_once_local($close = false){
+    global $core;
     static $executed = array();
 
     try{
@@ -479,6 +480,7 @@ function cli_run_once_local($close = false){
          * No run file exists yet, create one now
          */
         file_put_contents($run_dir.$script, getmypid());
+        $core->register('shutdown_cli_run_once_local', array(true));
         return true;
 
     }catch(Exception $e){
