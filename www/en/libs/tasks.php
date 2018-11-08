@@ -6,13 +6,22 @@
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@capmega.com>
+ * @category Function reference
+ * @package tasks
  */
 
 
 
 /*
- * Initialize the library
- * Automatically executed by libs_load()
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package tasks
+ *
+ * @return void
  */
 function tasks_library_init(){
     try{
@@ -27,6 +36,16 @@ function tasks_library_init(){
 
 /*
  * Add the specified task to the tasks table
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ * @see tasks_validate()
+ *
+ * @param params $task The task to be added to the database
+ * @return params The added task, validated and with the tasks id added
  */
 function tasks_add($task){
     try{
@@ -58,7 +77,6 @@ function tasks_add($task){
 
         $task['id'] = sql_insert_id();
 
-
         if($task['auto_execute']){
             log_file(tr('Added new auto executing task ":description" with id ":id"', array(':description' => $task['description'], ':id' => $task['id'])), 'tasks');
             run_background('base/tasks execute --env '.ENVIRONMENT, true, false);
@@ -77,7 +95,17 @@ function tasks_add($task){
 
 
 /*
- * Add the specified task to the tasks table
+ * Update the specified task in the tasks table
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ * @see tasks_validate()
+ *
+ * @param params $task The task to be updated in the database
+ * @return params The updated task, validated
  */
 function tasks_update($task, $executed = false){
     try{
@@ -125,9 +153,30 @@ function tasks_update($task, $executed = false){
 /*
  * Validate the specified task
  *
- * In a task, data may be just about anything and everything (minus objects)
- * since it will pass through json_encode. The only thing it will not store
- * is object types
+ * In a task, data may be just about anything and everything (minus objects) since it will pass through json_encode. The only thing it will not store is object types
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ * @see tasks_add()
+ * @see tasks_update()
+ *
+ * @param params $task The task to be validated
+ * @params string $status
+ * @params string $command
+ * @params natural $after
+ * @params string $data
+ * @params string $results
+ * @params string $method
+ * @params natural $time_limit
+ * @params datetime $executed
+ * @params natural $natural
+ * @params natural $parents_id
+ * @params boolean $parrallel
+ * @params boolean $verbose
+ * @return params The validated task
  */
 function tasks_validate($task){
     global $_CONFIG;
@@ -137,7 +186,7 @@ function tasks_validate($task){
 
         $v = new validate_form($task, 'status,command,after,data,results,method,time_limit,executed,time_spent,parents_id,parrallel,verbose');
 
-        if($task['time_limit'] === ""){
+        if($task['time_limit'] === ''){
             $task['time_limit'] = $_CONFIG['tasks']['default_time_limit'];
         }
 
@@ -375,6 +424,7 @@ function tasks_list($status, $limit = 10){
 
 
 
+// :TODO: Move this function to somewhere else, anywhere else, it has nothing to do with tasks, AFAIK. Also, it should be tasks_test_mysql()
 /*
  * Test if the core MySQL server is still available. If not, disconnect so that
  * later queries will auto reconnect

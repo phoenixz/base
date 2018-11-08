@@ -103,7 +103,7 @@ function uglify_css_check(){
 /*
  * Uglify all CSS files in www/en/pub/css
  */
-function uglify_css($paths = null){
+function uglify_css($paths = null, $force = false){
     global $npm, $node, $node_modules, $_CONFIG;
     static $check;
 
@@ -356,7 +356,7 @@ function uglify_css($paths = null){
                          * Compare filemtimes, if they match then we will assume that
                          * the file has not changed, so we can skip compressing
                          */
-                        if((filemtime($minfile) == filemtime($file)) and !FORCE){
+                        if((filemtime($minfile) == filemtime($file)) and !$force){
                             /*
                              * Do not compress, just continue with next file
                              */
@@ -490,7 +490,7 @@ function uglify_js_check(){
 /*
  * Uglify all js files in www/en/pub/js
  */
-function uglify_js($paths = null){
+function uglify_js($paths = null, $force = false){
     global $npm, $node, $node_modules;
     static $check;
 
@@ -735,7 +735,7 @@ function uglify_js($paths = null){
                          * Compare filemtimes, if they match then we will assume that
                          * the file has not changed, so we can skip compressing
                          */
-                        if((filemtime($minfile) == filemtime($file)) and !FORCE){
+                        if((filemtime($minfile) == filemtime($file)) and !$force){
                             /*
                              * Do not compress, just continue with next file
                              */

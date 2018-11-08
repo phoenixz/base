@@ -17,7 +17,7 @@
 function image_library_init(){
     try{
         if(!class_exists('Imagick')){
-            throw new bException(tr('image: php module "imagick" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php5-imagick; sudo php5enmod imagick" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php5-imagick" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
+            throw new bException(tr('image: php module "imagick" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php-imagick; sudo phpenmod imagick" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php-imagick" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
         }
 
         load_libs('file');
@@ -422,6 +422,13 @@ function image_convert($source, $destination, $params = null){
         return $destination;
 
     }catch(Exception $e){
+        try{
+            $exist = safe_exec('which convert');
+
+        }catch(Exception $e){
+            throw new bException(tr('image_convert(): The "convert" command could not be found. This probably means that imagemagick has not been installed. To install imagemagick on ubuntu, please execute "sudo apt -y install imagemagick"'), 'not-installed');
+        }
+
         try{
             if(file_exists(ROOT.'data/log/imagemagic_convert.log')){
                 $contents = safe_exec('tail -n 3 '.ROOT.'data/log/imagemagic_convert.log');
@@ -1142,6 +1149,65 @@ function image_slider($params = null){
 
     }catch(Exception $e){
         throw new bException('image_slider(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * View the specified image using the configured image viewer
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package image
+ *
+ * @param string $file
+ * @return void
+ */
+function image_view($file, $background = true){
+    global $_CONFIG;
+
+    try{
+        /*
+         * Validate requested image
+         */
+        if(!$file){
+            throw new bException(tr('image_view(): No image specified'), 'not-specified');
+        }
+
+        if(!is_image($file)){
+            throw new bException(tr('image_view(): Specified file ":file" is not an image', array(':file' => $file)), 'invalid');
+        }
+
+        /*
+         * Ensure that the requested viewer is installed
+         */
+        try{
+            $viewer = safe_exec('which "'.$_CONFIG['images']['viewer'].'"');
+            $viewer = array_shift($viewer);
+
+        }catch(Exception $e){
+            if(substr($_CONFIG['images']['viewer'], -3, 3) === 'feh'){
+                throw new bException(tr('image_view(): Configured viewer "feh" (See $_CONFIG[images][viewer]), is not yet installed. Please install it first to continue. On ubuntu and debian platforms, use "apt install -y feh", on Redhat and fedora platforms, use "yum install -y feh"'), 'not-installed');
+            }
+
+            throw new bException(tr('image_view(): Configured viewer ":viewer" could not be found', array(':viewer' => $_CONFIG['images']['viewer'])), 'not-installed');
+        }
+
+        /*
+         * Run in background or foreground
+         */
+        if($background){
+            run_background($viewer.' '.$file, true, false);
+
+        }else{
+            safe_exec($viewer.' '.$file);
+        }
+
+    }catch(Exception $e){
+        throw new bException('image_view(): Failed', $e);
     }
 }
 ?>

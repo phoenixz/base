@@ -6,12 +6,22 @@
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@capmega.com>
+ * @category Function reference
+ * @package scanimage
  */
 
 
 
 /*
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
  *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @return void
  */
 function scanimage_library_init(){
     try{
@@ -27,7 +37,21 @@ function scanimage_library_init(){
 /*
  * Scan image using the scanimage command line program
  *
- * Example command: scanimage --progress  --buffer-size --contrast 50 --gamma 1.8 --jpeg-quality 80 --transfer-format JPEG --mode Color --resolution 300 --format jpeg > test.jpg
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ * @example scanimage --progress  --buffer-size --contrast 50 --gamma 1.8 --jpeg-quality 80 --transfer-format JPEG --mode Color --resolution 300 --format jpeg > test.jpg
+ *
+ * @param params $params
+ * @params string device
+ * @params string jpeg_quality
+ * @params string buffer_size
+ * @params string options
+ * @params string format
+ * @params string file
+ * @return string the file name for the scanned image
  */
 function scanimage($params){
     try{
@@ -104,6 +128,21 @@ function scanimage($params){
 
 /*
  * Validate the specified scanimage parameters
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @param params $params
+ * @params string device
+ * @params string jpeg_quality
+ * @params string buffer_size
+ * @params string options
+ * @params string format
+ * @params string file
+ * @return params The specified scanimage parameters $params validated
  */
 function scanimage_validate($params){
     global $_CONFIG;
@@ -273,8 +312,16 @@ function scanimage_validate($params){
 
 /*
  * List the available scanner devices from the driver database
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @return array All found scanner devices
  */
-function scanimage_list($all = false){
+function scanimage_list(){
     try{
         /*
          * Get device data from cache
@@ -297,12 +344,18 @@ function scanimage_list($all = false){
 
 
 /*
- * Search devices from the scanner drivers. This might take a while, easily up
- * to 30 seconds or more
+ * Search devices from the scanner drivers. This might take a while, easily up to 30 seconds or more
  *
- * Example scanimage -L outputs would be
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ * @example scanimage -L outputs would be
  * device `brother4:bus4;dev1' is a Brother MFC-L8900CDW USB scanner
  * device `imagescan:esci:usb:/sys/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb4/4-2/4-2:1.0' is a EPSON DS-1630
+ *
+ * @return array All found scanner devices
  */
 function scanimage_detect_devices(){
     try{
@@ -360,7 +413,18 @@ function scanimage_detect_devices(){
 
 
 /*
- * List the available scanner devices
+ *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ * @example scanimage -L outputs would be
+ * device `brother4:bus4;dev1' is a Brother MFC-L8900CDW USB scanner
+ * device `imagescan:esci:usb:/sys/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb4/4-2/4-2:1.0' is a EPSON DS-1630
+ *
+ * @return array All found scanner devices
  */
 function scanimage_update_devices(){
     try{
@@ -449,10 +513,18 @@ function scanimage_update_devices(){
 /*
  * Get driver options for the specified scanner device from the drivers
  *
- * Devices confirmed to be working:
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ * @note Devices confirmed to be working:
  * device `brother4:bus4;dev1' is a Brother MFC-L8900CDW USB scanner
  * device `imagescan:esci:usb:/sys/devices/pci0000:00/0000:00:1c.0/0000:03:00.0/usb4/4-2/4-2:1.0' is a EPSON DS-1630
  * device `hpaio:/usb/HP_LaserJet_CM1415fnw?serial=00CNF8BC4K04' is a Hewlett-Packard HP_LaserJet_CM1415fnw all-in-one
+ *
+ * @param string $device
+ * @return
  */
 function scanimage_get_options($device){
     try{
@@ -655,6 +727,14 @@ function scanimage_get_options($device){
 
 /*
  * Return the data on the default scanner
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @return
  */
 function scanimage_get_default(){
     try{
@@ -680,6 +760,15 @@ function scanimage_get_default(){
 
 /*
  * Return the data on the default scanner
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @param string $device_string The device to get and return data from
+ * @return array All found data for the specified device
  */
 function scanimage_get($device_string){
     try{
@@ -702,6 +791,15 @@ function scanimage_get($device_string){
 
 /*
  * Create and return HTML for a select component showing available scanners
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @param params $params
+ * @return string The HTML for the select box
  */
 function scanimage_select($params){
     try{
@@ -731,6 +829,15 @@ function scanimage_select($params){
 /*
  * Create and return HTML for a select component showing available resolutions
  * for the specified scanner device
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @param params $params
+ * @return string The HTML for the resolution select box
  */
 function scanimage_select_resolution($params){
     try{
@@ -758,13 +865,22 @@ function scanimage_select_resolution($params){
         return $html;
 
     }catch(Exception $e){
-        throw new bException('scanimage_select(): Failed', $e);
+        throw new bException('scanimage_select_resolution(): Failed', $e);
     }
 }
 
 
+
 /*
+ * Returns the scanimage command. This, by default is "sudo scanimage" but by configuration may be something else
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @return string The scanimage command
  */
 function scanimage_command(){
     global $_CONFIG;

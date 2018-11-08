@@ -13,9 +13,6 @@ try{
 
     }elseif(str_starts_not($path, '/') == 'base/'){
         $path = ROOT.'scripts/base/';
-
-    }else{
-        throw new bException(tr('run_background(): Invalid path ":path" specified. Only scripts in ROOT/scripts/ may be run using this function', array(':path' => $path)), 'security');
     }
 
     if($single and process_runs($cmd)){
@@ -80,11 +77,13 @@ try{
         exec($command);
     }
 
-    log_file($command, 'run-background');
 // :DEBUG: Leave the next line around, it will be useful..
 //showdie($command);
 
-    return exec(sprintf('cat %s; rm %s', ROOT.'data/run-background/'.$cmd.' ', ROOT.'data/run-background/'.$cmd));
+    $pid = exec(sprintf('cat %s; rm %s', ROOT.'data/run-background/'.$cmd.' ', ROOT.'data/run-background/'.$cmd));
+    log_file('PID:'.$pid.' '.$command, 'run-background');
+
+    return $pid;
 
 }catch(Exception $e){
     throw new bException('run_background(): Failed', $e);

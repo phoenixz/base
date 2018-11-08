@@ -1154,7 +1154,7 @@ function ssh_get_fingerprints($domain, $port){
         $port    = ssh_get_port($port);
         $retval  = array();
         $results = safe_exec('ssh-keyscan -p '.$port.' '.$domain);
-show($results);
+
         foreach($results as $result){
             if(substr($result, 0, 1) === '#') continue;
 

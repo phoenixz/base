@@ -1697,7 +1697,7 @@ function log_file($messages, $class = 'syslog', $color = null){
          * Add session data
          */
         if(PLATFORM_HTTP){
-            $session = '('.session_id().' / '.REQUEST.') ';
+            $session = '('.substr(session_id(), -8, 8).' / '.REQUEST.') ';
 
         }else{
             $session = '(CLI-'.getmypid().' / '.REQUEST.') ';

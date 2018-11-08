@@ -6,13 +6,22 @@
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@capmega.com>
+ * @category Function reference
+ * @package storage-documents
  */
 
 
 
 /*
- * Initialize the library
- * Auto executed by libs_load
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sane
+ *
+ * @return void
  */
 function storage_documents_library_init(){
     try{
@@ -26,7 +35,20 @@ function storage_documents_library_init(){
 
 
 /*
- * Generate a new storage document
+ * Find available scanners
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @param mixed $section
+ * @param mixed $document
+ * @param boolean $auto_create
+ * @param string $column
+ * @param string $status
+ * @return params The requested document
  */
 function storage_documents_get($section, $document = null, $auto_create = false, $column = null, $status = null){
     try{
@@ -117,7 +139,7 @@ function storage_documents_get($section, $document = null, $auto_create = false,
                                         `parents_id`,
                                         `rights_id`,
                                         `assigned_to_id`,
-                                        `cutomers_id`,
+                                        `customers_id`,
                                         `providers_id`,
                                         `status`,
                                         `featured_until`,
@@ -154,6 +176,16 @@ function storage_documents_get($section, $document = null, $auto_create = false,
 
 /*
  * Generate a new storage document
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @param mixed $document
+ * @param mixed $section
+ * @return params The newly added document, validated and with the documents id added
  */
 function storage_documents_add($document, $section = null){
     try{
@@ -205,6 +237,16 @@ function storage_documents_add($document, $section = null){
 
 /*
  * Update the specified storage document
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @param mixed $document
+ * @param mixed $section
+ * @return params The updated document, validated
  */
 function storage_documents_update($document, $new = false){
     try{
@@ -266,6 +308,15 @@ function storage_documents_update($document, $new = false){
 
 /*
  * Validate and return the specified storage document
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @param params $document
+ * @return params The validated document
  */
 function storage_documents_validate($document){
     try{
@@ -292,7 +343,7 @@ function storage_documents_validate($document){
         array_default($params['errors'], 'valid_rating'        , tr('Please specify a valid ratings number'));
         array_default($params['errors'], 'valid_comments'      , tr('Please specify a valid comments number'));
 
-        $v = new validate_form($document, 'id,meta_id,status,sections_id,masters_id,parents_id,rights_id,assigned_to_id,featured_until,category1,category2,category3,upvotes,downvotes,priority,level,views,rating,comments');
+        $v = new validate_form($document, 'id,meta_id,status,sections_id,masters_id,parents_id,customers_id,providers_id,rights_id,assigned_to_id,featured_until,category1,category2,category3,upvotes,downvotes,priority,level,views,rating,comments');
 
         $v->isNatural($document['id'], 1, tr('Please specify a valid documents id'), VALIDATE_ALLOW_EMPTY_NULL);
         $v->isNatural($page['meta_id'], 1, $params['errors']['valid_meta_id'], VALIDATE_ALLOW_EMPTY_NULL);
@@ -327,6 +378,16 @@ function storage_documents_validate($document){
 
 /*
  *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @param natural $documents_id
+ * @param natural $users_id
+ * @return boolean True if the specified user (or if not specified, the user of the current session) has access, false if not
  */
 function storage_document_has_access($documents_id, $users_id = null){
     try{

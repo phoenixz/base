@@ -37,7 +37,7 @@ try{
     /*
      *
      */
-    log_console(tr('Executing command ":command" using function ":function"', array(':command' => $command, ':function' => $function)), 'VERBOSE/cyan');
+    log_console(tr('Executing command ":command" using function ":function"', array(':command' => $command, ':function' => $function)), (PLATFORM_HTTP ? 'cyan' : 'VERBOSE/cyan'));
 
     switch($function){
         case 'exec':
