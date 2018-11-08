@@ -1168,7 +1168,7 @@ function user_signup($user, $no_password = false){
 
                    array(':id'           => $user['id'],
                          ':createdby'    => isset_get($_SESSION['user']['id']),
-                         ':meta_id'      => meta_create(),
+                         ':meta_id'      => meta_action(),
                          ':username'     => get_null(isset_get($user['username'])),
                          ':status'       => isset_get($user['status']),
                          ':name'         => isset_get($user['name']),
