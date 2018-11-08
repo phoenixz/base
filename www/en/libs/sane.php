@@ -6,13 +6,22 @@
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@capmega.com>
+ * @category Function reference
+ * @package sane
  */
 
 
 
 /*
- * Initialize the library
- * Automatically executed by libs_load()
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sane
+ *
+ * @return void
  */
 function sane_library_init(){
     try{
@@ -27,6 +36,15 @@ function sane_library_init(){
 
 /*
  * Find available scanners
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package scanimage
+ *
+ * @param string $libusb The libusb identifier string of a specific device. If specified, only this device will be returned, if found
+ * @return array All scanners found by SANE
  */
 function sane_find_scanners($libusb = false){
     global $_CONFIG;
