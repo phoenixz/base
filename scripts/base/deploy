@@ -577,7 +577,7 @@ if($nocompress){
          * Compress script should be run with -f option
          */
         log_console(tr('Executing file compress script with force mode'), 'white');
-        $option = ' -f';
+        $option = ' --force-compress';
     }
 
     try{
