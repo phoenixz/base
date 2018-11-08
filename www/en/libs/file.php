@@ -180,8 +180,23 @@ function file_copy_to_target($file, $path, $extension = false, $singledir = fals
  * If $extension is false, the files original extension will be retained. If set to a value, the extension will be that value
  * If $singledir is set to false, the resulting file will be in a/b/c/d/e/, if its set to true, it will be in abcde
  * $length specifies howmany characters the subdir should have (4 will make a/b/c/d/ or abcd/)
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package file
+ *
+ * @param string $file
+ * @param string $path
+ * @param string $extension
+ * @param string $singledir
+ * @param string $length
+ * @param string $copy
+ * @param string $context
+ * @return string The target file
  */
-function file_move_to_target($file, $path, $extension = false, $singledir = false, $length = 4, $copy = false){
+function file_move_to_target($file, $path, $extension = false, $singledir = false, $length = 4, $copy = false, $context = null){
     try{
         if(is_array($file)){
             $upload = $file;
@@ -206,7 +221,7 @@ function file_move_to_target($file, $path, $extension = false, $singledir = fals
          * Ensure we have a local copy of the file to work with
          */
         if($file){
-            $file = file_get_local($file, $is_downloaded);
+            $file = file_get_local($file, $is_downloaded, $context);
         }
 
         if(!$extension){
@@ -1173,9 +1188,10 @@ function file_extension($file){
 /*
  * If the specified file is an HTTP, HTTPS, or FTP URL, then get it locally as a temp file
  */
-function file_get_local($file, &$is_downloaded = false){
+function file_get_local($file, &$is_downloaded = false, $context = null){
     try{
-        $file = trim($file);
+        $context = file_create_stream_context($context);
+        $file    = trim($file);
 
         if((stripos($file, 'http:') === false) and (stripos($file, 'https:') === false) and (stripos($file, 'ftp:') === false)){
             if(!file_exists($file)){
@@ -1201,7 +1217,7 @@ function file_get_local($file, &$is_downloaded = false){
         $is_downloaded = true;
 
         file_ensure_path(dirname($file));
-        file_put_contents($file, file_get_contents($orgfile));
+        file_put_contents($file, file_get_contents($orgfile, false, $context));
 
         return $file;
 
@@ -2417,6 +2433,40 @@ function file_path_contains_symlink($path, $prefix = null){
 
     }catch(Exception $e){
         throw new bException('file_path_contains_symlink(): Failed', $e);
+    }
+}
+
+
+
+/*
+ *
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package file
+ * @see https://secure.php.net/manual/en/migration56.openssl.php
+ * @see https://secure.php.net/manual/en/function.stream-context-create.php
+ * @see https://secure.php.net/manual/en/wrappers.php
+ * @see https://secure.php.net/manual/en/context.php
+ *
+ * @param array $context The stream context
+ * @param string $prefix
+ * @return boolean True if the specified $path (optionally prefixed by $prefix) contains a symlink, false if not
+ */
+function file_create_stream_context($context){
+    try{
+        if(!$context) return null;
+
+        if(!is_array($context)){
+            throw new bException(tr('file_create_stream_context(): Specified context is invalid, should be an array but is an ":type"', array(':type' => gettype($context))), 'invalid');
+        }
+
+        return stream_context_create($context);
+
+    }catch(Exception $e){
+        throw new bException('file_create_stream_context(): Failed', $e);
     }
 }
 ?>
