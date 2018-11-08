@@ -340,16 +340,6 @@ switch(cli_method()){
                 throw new bException(tr('Both --show-images and --recursive have been specified. These options are mutually exclusive, please specify one or the other'), 'warning/invalid');
             }
 
-            /*
-             * Check if image viewer is available.
-             */
-            $viewer = safe_exec('which '.$_CONFIG['images']['viewer']);
-            $viewer = array_shift($viewer);
-
-            if(!$viewer){
-                throw new bException(tr('Configured vierwer ":viewer" could not be found', array(':viewer' => $_CONFIG['images']['viewer'])), 'warning/invalid');
-            }
-
             if(TEST){
                 /*
                  * Okay, we can see both in TEST mode
@@ -403,90 +393,103 @@ switch(cli_method()){
         $count = file_tree_execute(array('path'      => $source,
                                          'recursive' => $recursive,
                                          'callback'  => function($file) use ($params, $display_diff, $no_exif, $no_delete, $show_images, $now){
-                                                    global $_CONFIG;
+                                                            global $_CONFIG;
 
-                                                    if(!is_image($file)){
-                                                        if(VERBOSE){
-                                                            log_console(tr('Skipping file ":image", it is not an image', array(':image' => $file)), 'yellow');
-                                                        }
-
-                                                        return;
-                                                    }
-
-                                                    try{
-                                                        if($params['backup']){
-                                                            /*
-                                                             * Make a backup of
-                                                             * the original file
-                                                             */
-                                                            copy($file, $file.'~'.$now);
-                                                        }
-
-                                                        if(!empty($params['copy_to_temp'])){
-                                                            /*
-                                                             * Make a copy of the original file in the
-                                                             * temp directory so we can show it later
-                                                             * to compare to the new version
-                                                             */
-                                                            $params['copy_to_temp'] = file_temp(false);
-                                                            copy($file, $params['copy_to_temp']);
-                                                        }
-
-                                                        if(TEST){
-                                                            $target = file_temp(false);
-
-                                                        }else{
-                                                            $target = $file;
-                                                        }
-
-                                                        if($display_diff){
-                                                            $before = image_info($file, $no_exif);
-                                                        }
-
-                                                        $target = image_convert($file, $target, $params);
-
-                                                        if($display_diff){
-                                                            log_console(tr('Before:'), 'white');
-                                                            s_display_info($before);
-
-                                                            log_console(tr('After:'), 'white');
-                                                            s_display_info(image_info($target, $no_exif));
-                                                        }
-
-                                                        if($show_images){
-                                                            if(empty($params['copy_to_temp'])){
-                                                                if(TEST){
-                                                                    /*
-                                                                     * Original image was not modified, target is in tmp dir
-                                                                     */
-                                                                    run_background('base/images view '.$target, true, false);
-                                                                    run_background('base/images view '.$file  , true, false);
-
-                                                                }else{
-                                                                    /*
-                                                                     * Original image was stored as backup
-                                                                     */
-                                                                    run_background('base/images view '.$target       , true, false);
-                                                                    run_background('base/images view '.$file.'~'.$now, true, false);
+                                                            if(!is_image($file)){
+                                                                if(VERBOSE){
+                                                                    log_console(tr('Skipping file ":image", it is not an image', array(':image' => $file)), 'yellow');
                                                                 }
 
-                                                            }else{
-                                                                /*
-                                                                 * Original is stored in temp directory
-                                                                 */
-                                                                run_background('base/images view '.$params['copy_to_temp'], true, false);
-                                                                run_background('base/images view '.$target                , true, false);
+                                                                return;
                                                             }
-                                                        }
 
-                                                        if(TEST and !$no_delete){
-                                                            file_delete($target);
-                                                        }
+                                                            try{
+                                                                if($params['backup']){
+                                                                    /*
+                                                                     * Make a backup of
+                                                                     * the original file
+                                                                     */
+                                                                    copy($file, $file.'~'.$now);
+                                                                }
 
-                                                    }catch(Exception $e){
-                                                        log_console(tr('Skipping file ":image", failed with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
-                                                    }
-                                               }));
+                                                                if(!empty($params['copy_to_temp'])){
+                                                                    /*
+                                                                     * Make a copy of the original file in the
+                                                                     * temp directory so we can show it later
+                                                                     * to compare to the new version
+                                                                     */
+                                                                    $params['copy_to_temp'] = file_temp(false);
+                                                                    copy($file, $params['copy_to_temp']);
+                                                                }
+
+                                                                if(TEST){
+                                                                    $target = file_temp(false);
+
+                                                                }else{
+                                                                    $target = $file;
+                                                                }
+
+                                                                if($display_diff){
+                                                                    $before = image_info($file, $no_exif);
+                                                                }
+
+                                                                $target = image_convert($file, $target, $params);
+
+                                                                if($display_diff){
+                                                                    log_console(tr('Before:'), 'white');
+                                                                    s_display_info($before);
+
+                                                                    log_console(tr('After:'), 'white');
+                                                                    s_display_info(image_info($target, $no_exif));
+                                                                }
+
+                                                            }catch(Exception $e){
+                                                                log_console(tr('Skipping file ":image", failed with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
+                                                            }
+
+                                                            if($show_images){
+                                                                try{
+                                                                    if(empty($params['copy_to_temp'])){
+                                                                        if(TEST){
+                                                                            /*
+                                                                             * Original image was not modified, target is in tmp dir
+                                                                             */
+                                                                            image_view($target);
+                                                                            image_view($file);
+
+                                                                        }else{
+                                                                            /*
+                                                                             * Original image was stored as backup
+                                                                             */
+                                                                            image_view($target);
+                                                                            image_view($file.'~'.$now);
+                                                                        }
+
+                                                                    }else{
+                                                                        /*
+                                                                         * Original is stored in temp directory
+                                                                         */
+                                                                        image_view($params['copy_to_temp']);
+                                                                        image_view($target);
+                                                                    }
+
+                                                                }catch(Exception $e){
+                                                                    /*
+                                                                     * Image viewer crashed for some reason
+                                                                     */
+                                                                    log_console(tr('Failed to view image file ":image" with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
+                                                                }
+                                                            }
+
+                                                            try{
+                                                                if(TEST and !$no_delete){
+                                                                    file_delete($target);
+                                                                }
+
+                                                            }catch(Exception $e){
+                                                                log_console(tr('Failed to delete file ":image" with ":error"', array(':image' => $file, ':error' => $e->getMessage())), 'yellow');
+                                                            }
+                                                        }));
 
         if(!VERBOSE){
             cli_dot(false);
@@ -505,28 +508,7 @@ switch(cli_method()){
         $image = cli_argument();
         cli_no_arguments_left();
         load_libs('image');
-
-        if(!$image){
-            throw new bException(tr('No image specified'), 'warning/not-specified');
-        }
-
-        if(!is_image($image)){
-            throw new bException(tr('Specified file ":file" is not an image', array(':file' => $image)), 'warning/invalid');
-        }
-
-        try{
-            $viewer = safe_exec('which '.$_CONFIG['images']['viewer']);
-            $viewer = array_shift($viewer);
-
-        }catch(Exception $e){
-            if(substr($_CONFIG['images']['viewer'], -3, 3) === 'feh'){
-                throw new bException(tr('You have "feh" configured as viewer (See $_CONFIG[images][viewer], but it is not yet installed. Please install it first to continue. On ubuntu and debian platforms, use "apt-get install -y feh", on Redhat and fedora platforms, use "yum install -y feh"'), 'warning/not-installed');
-            }
-
-            throw new bException(tr('Configured viewer ":viewer" could not be found', array(':viewer' => $_CONFIG['images']['viewer'])), 'warning/invalid');
-        }
-
-        safe_exec(array($_CONFIG['images']['viewer'], $image));
+        image_view($image);
         break;
 
     case 'clear-cache':
