@@ -196,6 +196,7 @@ function http_headers($params, $content_length){
         array_default($params, 'cors'     , false);
         array_default($params, 'mimetype' , $core->register['accepts']);
         array_default($params, 'headers'  , array());
+        // array_default($params, 'cache'    , array());
 
 //header("HTTP/1.0 404 Not Found");
 //die('TEST');
@@ -282,6 +283,7 @@ function http_headers($params, $content_length){
         }
 
         $headers = http_cache($params, $headers);
+        // $headers = http_cache($params['cache'], $headers);
 
         /*
          * Remove incorrect headers
@@ -458,7 +460,7 @@ function http_cache($params, $headers = array()){
 			if(!$_CONFIG['cache']['http']['enabled'] or (($params['http_code'] != 200) and ($params['http_code'] != 304))){
 				/*
 				 * Non HTTP 200 / 304 pages should NOT have cache enabled!
-				 * For example 404, 505, etc...
+				 * For example 404, 505 max-age etc...
 				 */
 				$params['policy']       = 'no-store';
 				$params['expires']      = '0';
@@ -534,6 +536,15 @@ function http_cache($params, $headers = array()){
 					// FALLTHROUGH
 				case 'no-cache, public':
 					// FALLTHROUGH
+				case 'no-store, no-cache, must-revalidate':
+                    $headers[] = 'Cache-Control: '.$params['policy'].', max-age='.$params['max_age'];
+                    $headers[] = 'Expires: '.$expires;
+					$headers[] = 'Cache-Control: post-check='.$params['post-check'].', pre-check='.$params['pre-check'].', false';
+
+                    if(!empty($core->register['etag'])){
+                        $headers[] = 'ETag: "'.$core->register['etag'].'"';
+                    }
+
 				case 'no-cache, private':
 					$headers[] = 'Cache-Control: '.$params['policy'].', max-age='.$params['max_age'];
 					$headers[] = 'Expires: '.$expires;
