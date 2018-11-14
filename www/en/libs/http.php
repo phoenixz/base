@@ -275,7 +275,7 @@ function http_headers($params, $content_length){
                         break;
 
                     default:
-                        throw new bException(tr('http_headers(: Unknown CORS header "%header%" specified', array('%header%' => $key)), 'unknown');
+                        throw new bException(tr('http_headers(): Unknown CORS header ":header" specified', array(':header' => $key)), 'unknown');
                 }
             }
         }
