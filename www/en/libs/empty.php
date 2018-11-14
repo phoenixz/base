@@ -7,7 +7,7 @@
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@capmega.com>
  * @category Function reference
- * @package
+ * @package empty
  */
 
 
@@ -21,7 +21,7 @@
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package
+ * @package empty
  *
  * @return void
  */
@@ -46,7 +46,7 @@ function empty_library_init(){
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package
+ * @package empty
  *
  * @param
  * @return
@@ -65,18 +65,37 @@ function empty_install($params){
 
 
 /*
- * ...
+ * SUB HEADER TEXT
+ *
+ * DESCRIPTION
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
- * @package
+ * @package empty
+ * @see empty_install()
+ * @see date_convert() Used to convert the sitemap entry dates
+ * @table: `empty`
+ * @note: This is a note
+ * @version 1.22.0: Added documentation
+ * @example
+ * code
+ * $result = empty(array('foo' => 'bar'));
+ * showdie($result);
+ * /code
  *
- * @param
- * @return
+ * This would return
+ * code
+ * Foo...bar
+ * /code
+ *
+ * @param params $params A parameters array
+ * @params string $params[foo]
+ * @params string $params[bar]
+ * @return string The result
  */
-function empty_function(){
+function empty_function($params){
     try{
 
     }catch(Exception $e){
