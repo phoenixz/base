@@ -5,21 +5,30 @@
  * This library contains functions to manage available site URL's and generate
  * sitemaps from there
  *
- * Written by Sven Oostenbrink
- *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@capmega.com>
+ * @category Function reference
+ * @package sitemap
  */
 
 
 
 /*
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
  *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sitemap
+ *
+ * @return void
  */
 function sitemap_library_init(){
     try{
         /*
-         * Requires sitemap configuration
+         * sitemap configuration is required for this library
          */
         load_config('sitemap');
 
@@ -35,6 +44,15 @@ function sitemap_library_init(){
  * If sitemap database does not contain any "file" data then only the
  * sitemap.xml will be created. If it does, the sitemap.xml will be the index
  * file, and the other sitemap files will be auto generated one by one
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sitemap
+ *
+ * @param mixed $languages
+ * @return natural The amount of sitemap files generated
  */
 function sitemap_generate($languages = null){
     global $_CONFIG;
@@ -83,7 +101,6 @@ function sitemap_generate($languages = null){
                  * There are no sitemap entries that require extra sitemap files
                  * Just generate the default sitemap.xml file and we're done!
                  */
-                log_console(tr('Generating single sitemap file'), 'VERBOSE/cyan');
                 $count += sitemap_xml($language);
 
                 file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
@@ -166,6 +183,14 @@ function sitemap_generate($languages = null){
  *
  * Data will first be written to a new temp file, and then be moved over the
  * currently existing one, if one exist
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sitemap
+ *
+ * @return string the XML that was written to the sitemap index file sitemap.xml
  */
 function sitemap_index(){
     try{
@@ -208,6 +233,19 @@ function sitemap_index(){
 
 /*
  * Generate the sitemap.xml file
+ *
+ * Data will first be written to a new temp file, and then be moved over the
+ * currently existing one, if one exist
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sitemap
+ *
+ * @param string $language
+ * @param string $file
+ * @return natural The amount of sitemap entries written
  */
 function sitemap_xml($language = null, $file = null){
     global $_CONFIG;
@@ -246,6 +284,8 @@ function sitemap_xml($language = null, $file = null){
         $xml  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".
                 "   <urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\">\n";
 
+        log_console(tr('Generating single sitemap file ":file"', array(':file' => TMP.$sitemap.'.xml')), 'VERBOSE/cyan');
+
         while($entry = sql_fetch($entries)){
             $count++;
             $xml .= sitemap_entry($entry);
@@ -268,6 +308,45 @@ function sitemap_xml($language = null, $file = null){
 
 /*
  * Get a sitemap entry
+ *
+ * Data will first be written to a new temp file, and then be moved over the
+ * currently existing one, if one exist
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sitemap
+ * @see sitemap_xml()
+ * @see date_convert() Used to convert the sitemap entry dates
+ * @table: `sitemap_data`
+ * @note:
+ * @version 1.22.0: Added documentation
+ * @example
+ * code
+ * $xml = sitemap_entry(array('url'              => 'https://capmega.com/en/',
+ *                            'page_modifiedon'  => '2018-11-16 15:34:19',
+ *                            'change_frequency' => '7',
+ *                            'priority'         => '.7'));
+ * showdie($xmil);
+ * /code
+ *
+ * This would return
+ * code
+ * <url>
+ *   <loc>https://rideworks.com/about.html</loc>
+ *   <lastmod>2017-01-20T23:26:58-06:00</lastmod>
+ *   <changefreq>weekly</changefreq>
+ *   <priority>0.70</priority>
+ * </url>
+ * /code
+ *
+ * @param params $entry A complete sitemap entry from the `sitemap_data` table
+ * @params string $entry[url]
+ * @params string $entry[page_modifiedon]
+ * @params string $entry[change_frequency]
+ * @params string $entry[priority]
+ * @return string The XML for the specified sitemap entry
  */
 function sitemap_entry($entry){
     try{
@@ -312,7 +391,19 @@ function sitemap_entry($entry){
 
 
 /*
- * Get a sitemap file
+ * Returns a sitemap file entry for a sitemap index file
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sitemap
+ * @see sitemap_index()
+ * @version 1.22.0: Added documentation
+ *
+ * @param string $file
+ * @param mixed $lastmod
+ * @return string The XML for the specified sitemap file entry
  */
 function sitemap_file($file, $lastmod = null){
     try{
@@ -338,6 +429,17 @@ function sitemap_file($file, $lastmod = null){
 
 /*
  * Clear the sitemap table
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sitemap
+ * @see sitemap_index()
+ * @version 1.22.0: Added documentation
+ *
+ * @param mixed $groups
+ * @return whole The amount of entries that were deleted from the tables
  */
 function sitemap_clear($groups = null){
     try{
@@ -361,6 +463,17 @@ function sitemap_clear($groups = null){
 
 /*
  * Delete indivitual entries from the sitemap table
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sitemap
+ * @see sitemap_index()
+ * @version 1.22.0: Added documentation
+ *
+ * @param mixed $list
+ * @return whole The amount of deleted entries
  */
 function sitemap_delete($list){
     try{
@@ -389,6 +502,21 @@ function sitemap_delete($list){
 
 /*
  * Add a new URL to the sitemap table
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sitemap
+ * @see sitemap_index()
+ * @version 1.22.0: Added documentation
+ *
+ * @param params $entry A complete sitemap entry from the `sitemap_data` table
+ * @params string $entry[url]
+ * @params string $entry[page_modifiedon]
+ * @params string $entry[change_frequency]
+ * @params string $entry[priority]
+ * @return params The specified and inserted entry, validated
  */
 function sitemap_add_entry($entry){
     try{
@@ -479,6 +607,17 @@ function sitemap_add_entry($entry){
 
 /*
  * Delete all sitemap tmp and backup files and directories
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sitemap
+ * @see sitemap_index()
+ * @version 1.22.0: Added documentation
+ *
+ * @param string $language
+ * @return void
  */
 function sitemap_delete_backups($language){
     try{
@@ -519,7 +658,27 @@ function sitemap_delete_backups($language){
 
 
 /*
+ * Validate the specified sitemap entry
  *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package sitemap
+ * @see sitemap_index()
+ * @version 1.22.0: Added documentation
+ *
+ * @param params $entry
+ * @params natural $entry[createdby]
+ * @params natural $entry[status]
+ * @params natural $entry[url]
+ * @params natural $entry[priority]
+ * @params natural $entry[page_modification]
+ * @params natural $entry[change_frequency]
+ * @params natural $entry[language]
+ * @params natural $entry[group]
+ * @params natural $entry[file]
+ * @return params The specified $entry, validated
  */
 function sitemap_validate_entry($entry){
     global $_CONFIG;
