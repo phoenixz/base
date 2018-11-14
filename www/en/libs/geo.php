@@ -38,7 +38,7 @@ function geo_location_from_ip($ip = null) {
                                                    `name`,
                                                    `seoname`
 
-                                            FROM   `geo_countries`
+                                            FROM   `geo_states`
 
                                             WHERE  `id` = :id', array(':id' => $location['city']['states_id']));
 
