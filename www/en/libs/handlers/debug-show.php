@@ -25,6 +25,7 @@ try{
     $retval = '';
 
     if(PLATFORM_HTTP){
+        load_libs('http');
         http_headers(200, 0);
     }
 
