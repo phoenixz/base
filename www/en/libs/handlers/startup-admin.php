@@ -17,6 +17,34 @@ $_CONFIG['cache']['http']['enabled'] = false;
 
 
 /*
+ * Check what environment we're in
+ */
+$env = getenv(PROJECT.'_ENVIRONMENT');
+
+if(empty($env)){
+    /*
+     * No environment set in ENV, maybe given by parameter?
+     */
+    die('startup: Required environment not specified for project "'.PROJECT.'"');
+}
+
+if(strstr($env, '_')){
+    die('startup: Specified environment "'.$env.'" is invalid, environment names cannot contain the underscore character');
+}
+
+define('ENVIRONMENT', $env);
+
+
+
+/*
+ * Load basic configuration for the current environment
+ */
+load_config(' ');
+load_config('admin');
+
+
+
+/*
  * Define basic platform constants
  */
 define('ADMIN'      , '_admin');
@@ -39,31 +67,8 @@ define('STATUS'     , (getenv('STATUS')                   ? 'STATUS'      : null
 
 
 /*
- * Check what environment we're in
+ * Load basic libraries
  */
-$env = getenv(PROJECT.'_ENVIRONMENT');
-
-if(empty($env)){
-    /*
-     * No environment set in ENV, maybe given by parameter?
-     */
-    die('startup: Required environment not specified for project "'.PROJECT.'"');
-}
-
-if(strstr($env, '_')){
-    die('startup: Specified environment "'.$env.'" is invalid, environment names cannot contain the underscore character');
-}
-
-define('ENVIRONMENT', $env);
-
-
-
-/*
- * Load basic configuration for the current environment
- * Load cache libraries (done until here since these need configuration @ load time)
- */
-load_config(' ');
-load_config('admin');
 load_libs('http,html,inet,atlant,cache'.(empty($_CONFIG['memcached']) ? '' : ',memcached').(empty($_CONFIG['cdn']['enabled']) ? '' : ',cdn'));
 
 
