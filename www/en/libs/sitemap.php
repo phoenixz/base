@@ -83,7 +83,7 @@ function sitemap_generate($languages = null){
                  * There are no sitemap entries that require extra sitemap files
                  * Just generate the default sitemap.xml file and we're done!
                  */
-                log_console(tr('Generating single sitemap file'), 'QUIET');
+                log_console(tr('Generating single sitemap file'), 'VERBOSE/cyan');
                 $count += sitemap_xml($language);
 
                 file_execute_mode(ROOT.'www/'.$language, 0770, array('language' => $language), function($params){
