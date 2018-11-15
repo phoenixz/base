@@ -452,7 +452,7 @@ function blogs_post_update($post, $params = null){
              * Page URL changed, delete old entry from the sitemap table to
              * avoid it still showing up in sitemaps, since this page is now 404
              */
-            sitemap_delete($url);
+            sitemap_delete_entry($url);
         }
 
         if(isset_get($post['status']) === 'published'){
@@ -2122,7 +2122,7 @@ function blogs_post_url($post){
                 throw new bException(tr('blogs_post_url(): No URL template or blogs_id specified for post ":post"', array(':post' => $post)), 'not-specified');
             }
 
-            $post['url_template'] = sql_get('SELECT `url_template` FROM `blogs` WHERE `id` = :id', array(':id' => $post['blogs_id']), 'url-template');
+            $post['url_template'] = sql_get('SELECT `url_template` FROM `blogs` WHERE `id` = :id', array(':id' => $post['blogs_id']), 'url_template');
         }
 
         if(empty($post['url_template'])){
