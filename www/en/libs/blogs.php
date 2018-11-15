@@ -452,7 +452,7 @@ function blogs_post_update($post, $params = null){
              * Page URL changed, delete old entry from the sitemap table to
              * avoid it still showing up in sitemaps, since this page is now 404
              */
-            sitemap_delete($url);
+            sitemap_delete_entry($url);
         }
 
         if(isset_get($post['status']) === 'published'){
@@ -2119,7 +2119,7 @@ function blogs_post_url($post){
          */
         if(empty($post['url_template'])){
             if(empty($post['blogs_id'])){
-                throw new bException(tr('blogs_post_url(): No URL template or blogs_id specified for post ":post"', array(':post' => $post)), 'not_specified');
+                throw new bException(tr('blogs_post_url(): No URL template or blogs_id specified for post ":post"', array(':post' => $post)), 'not-specified');
             }
 
             $post['url_template'] = sql_get('SELECT `url_template` FROM `blogs` WHERE `id` = :id', array(':id' => $post['blogs_id']), 'url_template');
@@ -2129,16 +2129,10 @@ function blogs_post_url($post){
             /*
              * This blog has no URL template configured, so use the default one
              */
-            $url = $_CONFIG['blogs']['url'];
-
-        }else{
-            $url = $post['url_template'];
+            throw new bException(tr('blogs_post_url(): Blog ":blog" has no template defined', array(':blog' => $post['blogs_id'])), 'not-specified');
         }
 
-        if(!$url){
-            throw new bException('blogs_post_url(): Unable to find a URL template', 'not_specified');
-        }
-
+        $url      = $post['url_template'];
         $sections = array('id',
                           'time',
                           'date',
@@ -2181,7 +2175,7 @@ function blogs_post_url($post){
                      * This post does not have all required sections available. Disable post and notify
                      */
                     sql_query('UPDATE `blogs_posts` SET `status` = "incomplete" WHERE `id` = :id', array(':id' => $post['id']));
-                    throw new bException(tr('blogs_post_url(): Blog post ":post" is missing the section ":section", a URL cannot be generated', array(':post' => $post['id'], ':section' => $section)), 'incomplete');
+                    throw new bException(tr('blogs_post_url(): URL template ":template" for blog post ":post" requires the section ":section", but the blog post does not have this section available. A URL cannot be generated', array(':template' => $post['url_template'], ':post' => $post['id'], ':section' => $section)), 'incomplete');
                 }
             }
         }
