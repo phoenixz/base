@@ -575,7 +575,7 @@ function sitemap_delete_entry($list){
  * @params string $entry[priority]
  * @return params The specified and inserted entry, validated
  */
-function sitemap_add_entry($entry){
+function sitemap_insert_entry($entry){
     try{
         array_params($entry);
         array_default($entry, 'url'             , '');
@@ -656,7 +656,7 @@ function sitemap_add_entry($entry){
         return $entry;
 
     }catch(Exception $e){
-        throw new bException('sitemap_add_entry(): Failed', $e);
+        throw new bException('sitemap_insert_entry(): Failed', $e);
     }
 }
 
