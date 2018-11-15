@@ -120,6 +120,48 @@ function doc_parse_file($file){
 
 
 /*
+ * Parse the header commentary of the specified file
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package phpdoc
+ *
+ * @param string $file
+ */
+function doc_parse_file_header($file){
+    try{
+
+    }catch(Exception $e){
+        throw new bException('doc_parse_file_header(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Parse the specified library file
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package phpdoc
+ *
+ * @param string $file
+ */
+function doc_parse_library_file($file){
+    try{
+
+    }catch(Exception $e){
+        throw new bException('doc_parse_library_file(): Failed', $e);
+    }
+}
+
+
+
+/*
  * Parse the specified comment section
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
@@ -130,11 +172,11 @@ function doc_parse_file($file){
  *
  * @param string $comment
  */
-function doc_parse_comment($comment){
+function doc_parse_function($function){
     try{
 
     }catch(Exception $e){
-        throw new bException('doc_parse_comment(): Failed', $e);
+        throw new bException('doc_parse_function(): Failed', $e);
     }
 }
 
@@ -151,11 +193,11 @@ function doc_parse_comment($comment){
  *
  * @param string $tag
  */
-function doc_parse_tag($tag){
+function doc_parse_function_doc($tag){
     try{
 
     }catch(Exception $e){
-        throw new bException('doc_parse_tag(): Failed', $e);
+        throw new bException('doc_parse_function_doc(): Failed', $e);
     }
 }
 
@@ -171,11 +213,11 @@ function doc_parse_tag($tag){
  * @package phpdoc
  *
  */
-function doc_add_file(){
+function doc_insert_function(){
     try{
 
     }catch(Exception $e){
-        throw new bException('doc_add_function(): Failed', $e);
+        throw new bException('doc_insert_function(): Failed', $e);
     }
 }
 
@@ -191,11 +233,11 @@ function doc_add_file(){
  * @package phpdoc
  *
  */
-function doc_add_function(){
+function doc_insert_file_header(){
     try{
 
     }catch(Exception $e){
-        throw new bException('doc_add_function(): Failed', $e);
+        throw new bException('doc_insert_file_header(): Failed', $e);
     }
 }
 
@@ -211,11 +253,11 @@ function doc_add_function(){
  * @package phpdoc
  *
  */
-function doc_add_class(){
+function doc_insert_class(){
     try{
 
     }catch(Exception $e){
-        throw new bException('doc_add_class(): Failed', $e);
+        throw new bException('doc_insert_class(): Failed', $e);
     }
 }
 
