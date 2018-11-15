@@ -9,6 +9,14 @@
 
 
 /*
+ * Make sure we have the script command available
+ */
+define('SCRIPT', str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
+$core->register['script_command'] = implode(' ', $GLOBALS['argv']);
+
+
+
+/*
  * All scripts will execute cli_done() automatically once done
  */
 load_libs('cli');
@@ -21,7 +29,6 @@ register_shutdown_function('cli_done');
  */
 try{
     define('ADMIN'      , '');
-    define('SCRIPT'     ,  str_runtil(str_rfrom($_SERVER['PHP_SELF'], '/'), '.php'));
     define('PWD'        , slash(isset_get($_SERVER['PWD'])));
     define('VERYVERBOSE', (cli_argument('-VV,--very-verbose')                               ? 'VERYVERBOSE' : null));
     define('VERBOSE'    , ((VERYVERBOSE or cli_argument('-V,--verbose,-V2,--very-verbose')) ? 'VERBOSE'     : null));
@@ -39,8 +46,6 @@ try{
     $e->setCode('parameters');
     throw new bException(tr('core::startup(): Failed to parse one or more system parameters'), $e);
 }
-
-log_file(tr('Running script ":script"', array(':script' => $_SERVER['PHP_SELF'])), 'startup', 'cyan');
 
 
 
@@ -227,7 +232,9 @@ if(isset($die)){
 
 
 
-// :TODO: Check what this does, either delete it or comment it!
+/*
+ * Remove the command itself from the argv array
+ */
 array_shift($GLOBALS['argv']);
 
 
@@ -302,6 +309,14 @@ if($core->register['cli']['term']){
  * Set security umask
  */
 umask($_CONFIG['security']['umask']);
+
+
+
+/*
+ * Ensure that the process UID matches the file UID
+ */
+cli_process_uid_matches(true);
+log_file(tr('Running script ":script"', array(':script' => $_SERVER['PHP_SELF'])), 'startup', 'cyan');
 
 
 

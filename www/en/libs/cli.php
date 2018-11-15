@@ -5,14 +5,23 @@
  * It will be automatically loaded when running on command line
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@capmega.com>, Johan Geuze
+ * @copyright Sven Oostenbrink <support@capmega.com>
+ * @category Function reference
+ * @package cli
  */
 
 
 
 /*
- * Initialize the library
- * Automatically executed by libs_load()
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
+ *
+ * @return void
  */
 function cli_library_init(){
     global $core;
@@ -1021,42 +1030,214 @@ function cli_show_usage($usage, $color){
 
 
 /*
- * Exception if this script is not being run as root user
+ * Ensures that the UID of the user executing this script is the same as the UID of this libraries' owner
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
+ *
+ * @param boolean $auto_switch If set to true, the script
+ * @return void
  */
-function cli_is_root(){
+function cli_process_uid_matches($auto_switch = false){
     global $core;
 
-    if($core->register['posix']){
-        return posix_getuid() == 0;
-    }
+    try{
+        if(cli_get_process_uid() !== getmyuid()){
+            if(!$auto_switch){
+                throw new bException(tr('cli_process_uid_matches(): The user ":puser" is not allowed to execute these scripts, only user ":fuser" can do this. use "sudo -u :fuser COMMANDS instead.', array(':puser' => get_current_user(), ':fuser' => cli_get_process_user())), 'not-authorized');
+            }
 
-    return false;
+            /*
+             * Re-execute this command as the specified user
+             */
+            log_console(tr('Current user ":user" is not authorized to execute this script, reexecuting script as user ":reuser"', array(':user' => cli_get_process_uid(), ':reuser' => cli_get_process_user())), 'yellow', true, false, false);
+            passthru(cli_sudo('sudo -Eu "'.get_current_user().'" '.ROOT.'scripts/'.str_rfrom($core->register['script_command'], 'scripts/')));
+            die();
+        }
+
+    }catch(Exception $e){
+        throw new bException('cli_process_uid_matches(): Failed', $e);
+    }
 }
 
 
 
 /*
- * Exception if this script is not being run as root user
+ * Returns true if the user executing this process has sudo rights without password requirements
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
+ */
+function cli_process_user_has_free_sudo(){
+    try{
+        $result = safe_exec('timeout 0.1 sudo -v');
+        $result = array_pop($result);
+
+        if($result){
+            return false;
+        }
+
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('cli_process_user_has_free_sudo(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns the UID for the current process
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
+ */
+function cli_get_process_uid(){
+    global $core;
+
+    try{
+        if($core->register['posix']){
+            return posix_getuid();
+        }
+
+        $result = safe_exec('id -u');
+        $result = array_pop($result);
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('cli_get_process_uid(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns the UID for the current process
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
+ */
+function cli_get_process_user(){
+    global $core;
+
+    try{
+        if($core->register['posix']){
+            return posix_getpwuid(posix_geteuid())['name'];;
+        }
+
+        $result = safe_exec('id -un');
+        $result = array_pop($result);
+
+        return $result;
+
+    }catch(Exception $e){
+        throw new bException('cli_get_process_user(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Throws exception if this script is not being run as root user
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
+ */
+function cli_is_root(){
+    try{
+        return cli_get_process_uid() === 0;
+
+    }catch(Exception $e){
+        throw new bException('cli_is_root(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Throws exception if this script is not being run as root user
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
  */
 function cli_root_only(){
-    if(!cli_is_root()){
-        throw new bException('cli_root_only(): This script can ONLY be executed by the root user', 'notrootnotallowed');
-    }
+    try{
+        if(!cli_is_root()){
+            throw new bException('cli_root_only(): This script can ONLY be executed by the root user', 'not-allowed');
+        }
 
-    return true;
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('cli_root_only(): Failed', $e);
+    }
 }
 
 
 
 /*
- * Exception if this script is being run as root user
+ * Throws exception if this script is being run as root user
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
  */
 function cli_not_root(){
-    if(cli_is_root()){
-        throw new bException('cli_not_root(): This script can NOT be executed by the root user', 'rootnotallowed');
-    }
+    try{
+        if(cli_is_root()){
+            throw new bException('cli_not_root(): This script can NOT be executed by the root user', 'not-allowed');
+        }
 
-    return true;
+        return true;
+
+    }catch(Exception $e){
+        throw new bException('cli_not_root(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Throws exception if the user of this process has no free sudo rights
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
+ */
+function cli_sudo($command){
+    try{
+        if(!cli_process_user_has_free_sudo()){
+            throw new bException(tr('cli_sudo(): This script requires sudo privileges but the current user ":user" does not have these', array(':user' => cli_get_process_user())), 'no-sudo');
+        }
+
+        return $command;
+
+    }catch(Exception $e){
+        throw new bException('cli_sudo(): Failed', $e);
+    }
 }
 
 
