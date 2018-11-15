@@ -2737,4 +2737,109 @@ function blogs_post_down($id, $object, $view){
         throw new bException('blogs_post_down(): Failed', $e);
     }
 }
+
+/**
+ * generate html code
+ * @param  array  $photo is the current row from SQL
+ * @return string the code html for generate img
+ */
+function blogs_post_get_img($photo, $params, $tabindex){
+    $html = '';
+    /*
+         * Get photo dimensions
+         */
+        try{
+            load_libs('file');
+            unset($is_video);
+
+            if (file_exists(ROOT.'www/en/photos/'.$photo['file'].'-original.jpg')) {
+                $image = getimagesize(ROOT.'www/en/photos/'.$photo['file'].'-large.jpg');
+            } elseif (file_exists(ROOT.'www/en/photos/'.$photo['file'].'-original.mp4')) {
+                $mime_type = file_mimetype(ROOT.'www/en/photos/'.$photo['file'].'-original.mp4');
+                $image = ROOT.'www/en/photos/'.$photo['file'].'-original.mp4';
+                $is_video = true;
+            } else {
+                throw new Exception('Image/Video does not exists');
+            }
+        }catch(Exception $e){
+            $image = false;
+        }
+
+        if(!$image){
+            $image = array(tr('Invalid image'), tr('Invalid image'));
+        }
+
+        if (isset($is_video)) {
+            $html .= '              <tr class="form-group blog photo" id="photo'.$photo['id'].'">
+                                        <td class="file">
+                                            <div>
+                                                <a style="cursor:pointer;" type="button" data-toggle="modal" data-target="#modal-'.$photo['id'].'">
+                                                    '.html_img(blogs_photo_url($photo['file'], 'small'), html_safe('('.$image[0].' X '.$image[1].')'), $image[0], $image[1], 'rel="blog-page" class="col-md-1 control-label"').'
+                                                </a>
+                                                <div id="modal-'.$photo['id'].'" class="modal fade" role="dialog">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                                                <h4 class="modal-title">'.$post['name'].'</h4>
+                                                            </div>
+                                                            <div class="modal-body text-center">
+                                                                <video width="320" height="240" controls>
+                                                                    <source src="'.cdn_domain($photo['file'].'-original.mp4', 'blogs/media').'" type="'.$mime_type.'">
+                                                                    '.tr('Your browser does not support the video tag.').'
+                                                                </video>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-default" data-dismiss="modal">'.tr('Close').'</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>';
+        } else {
+            $html .= '              <tr class="form-group blog photo" id="photo'.$photo['id'].'">
+                                        <td class="file">
+                                            <div>
+                                                <a target="_blank" class="fancy" href="'.domain('pub/photos/'.($photo['file']. '-large.jpg')).'">
+                                                    '.html_img(domain('pub/photos/'.($photo['file'] . '-small.jpg')), html_safe('('.$image[0].' X '.$image[1].')'), $image[0], $image[1], 'rel="blog-page" class="col-md-1 control-label"').'
+                                                </a>
+                                            </div>
+                                        </td>';
+        }
+
+        if(isset_get($params['file_types'],false)){
+            try{
+                $html .= '              <td class="buttons">
+                                            <div>
+                                                '.html_select(array('name'     => 'file_status['.$photo['id'].']',
+                                                                    'class'    => 'btn blogpost photo type',
+                                                                    'extra'    => 'tabindex="'.++$tabindex.'"',
+                                                                    'selected' => $photo['type'],
+                                                                    'none'     => tr('Unspecified type'),
+                                                                    'resource' => $params['file_types'])).'
+                                                </a>
+                                            </div>
+                                        </td>';
+
+            }catch(Exception $e){
+                throw new bException(tr('blog-post: file type section failed'), $e);
+            }
+        }
+
+        $html .= '                      <td class="buttons">
+                                            <div>
+                                                <a class="col-md-5 btn btn-success blogpost photo up button">'.tr('Up').'</a>
+                                                <a class="col-md-5 btn btn-success blogpost photo down button">'.tr('Down').'</a>
+                                                <a class="col-md-5 btn btn-danger blogpost photo delete button">'.tr('Delete').'</a>
+                                            </div>
+                                        </td>
+                                        <td class="description">
+                                            <div>
+                                                <textarea class="blogpost photo description form-control" placeholder="'.tr('Description of this photo').'">'.$photo['description'].'</textarea>
+                                            </div>
+                                        </td>
+                                    </tr>';
+        return $html;
+}
 ?>
