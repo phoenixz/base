@@ -5,14 +5,23 @@
  * This contains image processing related functions
  *
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@capmega.com>, Johan Geuze
+ * @copyright Sven Oostenbrink <support@capmega.com>
+ * @category Function reference
+ * @package image
  */
 
 
 
 /*
- * Initialize the library
- * Automatically executed by libs_load()
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package image
+ *
+ * @return void
  */
 function image_library_init(){
     try{
