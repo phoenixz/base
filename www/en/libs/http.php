@@ -2,14 +2,27 @@
 /*
  * HTTP library, containing all sorts of HTTP functions
  *
+ * This library contains functions to manage BASE HTTP
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @copyright Sven Oostenbrink <support@capmega.com>
+ * @category Function reference
+ * @package http
  */
 
 
 
 /*
  * Return $_POST[dosubmit] value, and reset it to be sure it won't be applied twice
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package http
+ *
+ * @return mixed The value found in $_POST['dosubmit']
  */
 function get_dosubmit(){
     try{
@@ -30,7 +43,19 @@ function get_dosubmit(){
 
 
 /*
- * Redirect
+ * Redirect to the specified $target
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package http
+ *
+ * @param string $target
+ * @param natural $http_code
+ * @param boolean $clear_session_redirect
+ * @param natural $time_delay
+ * @return void (dies)
  */
 function redirect($target = '', $http_code = null, $clear_session_redirect = true, $time_delay = null){
     return include(__DIR__.'/handlers/http-redirect.php');
@@ -39,7 +64,20 @@ function redirect($target = '', $http_code = null, $clear_session_redirect = tru
 
 
 /*
- * Give URL with redirect value, IF specified
+ * Return the specified URL with a redirect URL stored in $core->register['redirect']
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package http
+ * @note If no URL is specified, the current URL will be used
+ * @see domain()
+ * @see core::register
+ * @see url_add_query()
+ *
+ * @param string $url
+ * @return string The specified URL (if not specified, the current URL) with $core->register['redirect'] added to it (if set)
  */
 function redirect_url($url = null){
     try{
@@ -193,6 +231,7 @@ function http_headers($params, $content_length){
     try{
         array_params($params, 'http_code');
         array_default($params, 'http_code', $core->register['http_code']);
+        array_default($params, 'etag'     , null);
         array_default($params, 'cors'     , false);
         array_default($params, 'mimetype' , $core->register['accepts']);
         array_default($params, 'headers'  , array());
@@ -280,7 +319,7 @@ function http_headers($params, $content_length){
             }
         }
 
-        $headers = http_cache($params, $headers);
+        $headers = http_cache($params, $params['http_code'], $params['etag'], $headers);
 
         /*
          * Remove incorrect headers
@@ -428,7 +467,7 @@ function http_cache_test($etag = null){
         return true;
 
     }catch(Exception $e){
-        throw new bException('http_cache(): Failed', $e);
+        throw new bException('http_cache_test(): Failed', $e);
     }
 }
 
@@ -442,7 +481,7 @@ function http_cache_test($etag = null){
  * For more information, see https://developers.google.com/speed/docs/insights/LeverageBrowserCaching
  * and https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/http-caching
  */
-function http_cache($params, $headers = array()){
+function http_cache($params, $http_code, $etag, $headers = array()){
     global $_CONFIG, $core;
 
     try{
@@ -454,7 +493,7 @@ function http_cache($params, $headers = array()){
              * PHP will take care of the cache headers
              */
 
-            if(!$_CONFIG['cache']['http']['enabled'] or (($params['http_code'] != 200) and ($params['http_code'] != 304))){
+            if(!$_CONFIG['cache']['http']['enabled'] or (($http_code != 200) and ($http_code != 304))){
                 /*
                  * Non HTTP 200 / 304 pages should NOT have cache enabled!
                  * For example 404, 505 max-age etc...
@@ -472,7 +511,7 @@ function http_cache($params, $headers = array()){
                         $params['cache']['policy']       = 'no-store';
 
                     }else{
-                        $core->register['etag'] = md5(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($params['etag']));
+                        $core->register['etag'] = md5(PROJECT.$_SERVER['SCRIPT_FILENAME'].filemtime($_SERVER['SCRIPT_FILENAME']).isset_get($etag));
                     }
                 }
 
