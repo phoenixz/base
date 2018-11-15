@@ -1308,7 +1308,7 @@ function accepts(){
 /*
  * Log specified message to console, but only if we are in console mode!
  */
-function log_console($messages = '', $color = null, $newline = true, $filter_double = false){
+function log_console($messages = '', $color = null, $newline = true, $filter_double = false, $log_file = true){
     static $c, $last;
 
     try{
@@ -1393,7 +1393,9 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
         /*
          * Always log to file log as well
          */
-        log_file($messages, SCRIPT, $color);
+        if($log_file){
+            log_file($messages, SCRIPT, $color);
+        }
 
         if(!PLATFORM_CLI){
             /*
@@ -1603,7 +1605,9 @@ function log_database($messages, $type = 'unknown'){
     }catch(Exception $e){
 //log_database($e);
 // :TODO: Add Notifications!
-        log_file(tr('log_database(): Failed to log message ":message" to database', array(':message' => $messages)), 'error');
+        if($log_file){
+            log_file(tr('log_database(): Failed to log message ":message" to database', array(':message' => $messages)), 'error');
+        }
 
         /*
          * Don't exception here because the exception may cause another log_database() call and loop endlessly
