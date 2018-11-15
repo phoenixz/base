@@ -152,13 +152,20 @@ switch(cli_method()){
     case 'generate':
         cli_no_arguments_left();
         log_console(tr('Regenerating sitemap files'), 'white');
-        $count = sitemap_generate();
 
-        if($count){
+        try{
+            $count = sitemap_generate();
             log_console(tr('Generated sitemap file with ":count" entries', array(':count' => $count)), 'green');
 
-        }else{
-            log_console(tr('Generated empty sitemap file as no entries were found'), 'warning');
+        }catch(Exception $e){
+            switch($e->getRealCode()){
+                case 'not-available':
+                    // FALLTHROUGH
+                case 'not-specified':
+                    throw $e->makeWarning(true);
+            }
+
+            throw $e;
         }
 
         break;
