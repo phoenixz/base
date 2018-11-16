@@ -1629,7 +1629,7 @@ class validate_form {
                 return $this->setError($message);
             }
 
-            if($this->not xor !in_array($this->testValue, $array)){
+            if($this->not xor !in_array($this->testValue, array_force($array))){
                 return $this->setError($message);
             }
 
