@@ -1986,7 +1986,7 @@ function html_img($src, $alt, $width = null, $height = null, $more = ''){
             $width = '';
         }
 
-        return '<img src="'.$src.'" alt="'.$alt.'"'.$width.$height.($more ? ' '.$more : '').'>';
+        return '<img src="'.$src.'" alt="'.htmlentities($alt).'"'.$width.$height.($more ? ' '.$more : '').'>';
 
     }catch(Exception $e){
         throw new bException('html_img(): Failed', $e);
