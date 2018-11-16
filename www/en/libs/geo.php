@@ -352,14 +352,31 @@ function geo_get_state($state, $single_column = false){
  * @param $country
  * @return mixed
  */
-function geo_get_city($city, $id_only = false){
+function geo_get_city($city, $states_id = null, $single_column = false){
     try{
-        if($id_only){
+        if($states_id){
+            $where   = 'WHERE  `seoname`   = :seoname
+                        AND    `states_id` = :states_id
+                        AND    `status`    IS NULL';
+
+            $execute = array(':seoname'   => $city,
+                             ':states_id' => $states_id);
+
+        }else{
+            $where   = 'WHERE  `seoname` = :seoname
+                        AND    `status`  IS NULL';
+
+            $execute = array(':seoname' => $city);
+        }
+
+        if($single_column){
             if($single_column === true){
                 $single_column = 'id';
             }
 
-            $city = sql_get('SELECT `'.$single_column.'` FROM `geo_cities` WHERE `seoname` = :seoname AND `status` IS NULL', true, array(':seoname' => $country));
+            $city = sql_get('SELECT `'.$single_column.'`
+
+                             FROM   `geo_cities` '.$where, true, $execute);
 
         }else{
             $city = sql_get('SELECT `id`,
@@ -386,12 +403,7 @@ function geo_get_city($city, $id_only = false){
                                     `moddate`,
                                     `status`
 
-                             FROM   `geo_cities`
-
-                             WHERE  `seoname` = :seoname
-                             AND    `status` IS NULL',
-
-                             array(':seoname' => $city));
+                             FROM   `geo_cities` '.$where, $execute);
         }
 
         return $city;
