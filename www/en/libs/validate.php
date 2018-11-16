@@ -1054,7 +1054,7 @@ class validate_form {
                 return $this->setError($message);
             }
 
-            if($this->not xor (($this->testValue < $min) and ($this->testValue > $max))){
+            if($this->not xor (($this->testValue <= $min) and ($this->testValue >= $max))){
                 return $this->setError($message);
             }
 
