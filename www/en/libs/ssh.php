@@ -1748,10 +1748,34 @@ function ssh_tunnel_exists($domain, $target_port, $target_domain = null){
 
             case 1:
                 /*
-                 * Yay! Found a tunnel! Return its PID
+                 * Yay! Found a tunnel! Test if it accepts connections and
+                 * return its PID
                  */
-                return array('pid'         => key($results),
-                             'source_port' => current($results));
+                load_libs('inet');
+
+                $source_port = current($results);
+                $works       = inet_test_host_port('127.0.0.1', $source_port);
+
+                if($works){
+                    /*
+                     * This tunnel works, yay!
+                     */
+                    return array('pid'         => key($results),
+                                 'source_port' => $source_port);
+                }
+
+                /*
+                 * Crap! The tunnel is not accepting connections! This means
+                 * either that the tunnel is broken, or that the remote
+                 * service is down.
+                 *
+                 * Assume the issue is with the tunnel. Kill the current
+                 * one, make a new one using the SAME source port, then try
+                 * again. If this one works, it was the tunnel. If this one
+                 * fails too, then we know it is the remote service
+                 */
+// :TODO: Implement
+                break;
 
             default:
                 /*
