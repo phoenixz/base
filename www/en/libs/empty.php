@@ -67,7 +67,11 @@ function empty_install($params){
 /*
  * SUB HEADER TEXT
  *
- * DESCRIPTION
+ * PARAGRAPH
+ *
+ * PARAGRAPH
+ *
+ * PARAGRAPH
  *
  * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
