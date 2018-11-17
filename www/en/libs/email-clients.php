@@ -4,10 +4,12 @@
  *
  * This library contains functions to manage email servers through SQL queries
  *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@capmega.com>
  * @category Function reference
- * @package image
+ * @package email
+ * @module imap
  */
 
 
@@ -26,7 +28,7 @@
 function email_clients_library_init(){
     try{
         if(!extension_loaded('imap')){
-            throw new bException(tr('email_clients_library_init(): The PHP "imap" module is not available, please install it first. On ubuntu install the module with "apt -y install php-imap"; a restart of the webserver or php fpm server may be required'), 'not-available');
+            throw new bException(tr('email_clients_library_init(): The PHP "imap" module is not available, please install it first. On ubuntu install the module with "apt -y install php-imap"; a restart of the webserver or php fpm server may be required'), 'missing-module');
         }
 
     }catch(Exception $e){

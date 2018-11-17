@@ -4,29 +4,44 @@
  *
  * This library can be used to manage emails
  *
- * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Sven Oostenbrink <support@capmega.com>
- *
- * Requires php-imap library
  * debian / ubuntu alikes : sudo apt-get -y install php5-imap openssl; sudo php5enmod imap
  * Redhat / Fedora alikes : sudo yum -y install php5-imap openssl
  *
- * Enable imap in email https://mail.google.com/mail/u/0/#settings/fwdandpop
- * Disable captcha https://accounts.google.com/DisplayUnlockCaptcha
- * First connection might be refused by email, and you may have to allow the connection here: https://security.google.com/settings/security/activity
- *
- * In case basic authentication is used, allow less secure apps in https://www.google.com/settings/security/lesssecureapps, see also https://support.google.com/accounts/answer/6010255?hl=en
- *
- * TO ADD USERS TO POSTFIX VIRTUAL USERS:
- * INSERT INTO `virtual_users` (`domain_id`, `password`, `email`) VALUES (1, ENCRYPT('the_password_here', CONCAT('$6$', SUBSTRING(SHA(RAND()), -16))), "user@domain.com");
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package email
+ * @module imap
+ * @see Enable imap in email https://mail.google.com/mail/u/0/#settings/fwdandpop
+ * @see Disable captcha https://accounts.google.com/DisplayUnlockCaptcha
+ * @see First connection might be refused by email, and you may have to allow the connection here: https://security.google.com/settings/security/activity
+ * @see In case basic authentication is used, allow less secure apps in https://www.google.com/settings/security/lesssecureapps, see also https://support.google.com/accounts/answer/6010255?hl=en
+ * @note TO ADD USERS TO POSTFIX VIRTUAL USERS: INSERT INTO `virtual_users` (`domain_id`, `password`, `email`) VALUES (1, ENCRYPT('the_password_here', CONCAT('$6$', SUBSTRING(SHA(RAND()), -16))), "user@domain.com");
  */
 
 
 
-load_config('email');
+/*
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package email
+ *
+ * @return void
+ */
+function email_library_init(){
+    try{
+        if(!extension_loaded('imap')){
+            throw new bException(tr('email_library_init(): The PHP "imap" module is not available, please install it first. On ubuntu install the module with "apt -y install php-imap"; a restart of the webserver or php fpm server may be required'), 'missing-module');
+        }
 
-if(!function_exists('imap_open')){
-    throw new bException(tr('php module "imap" appears not to be installed. Please install the module first. On Ubuntu and alikes, use "sudo apt-get -y install php5-imap; sudo php5enmod imap" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php5-imap" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not-available');
+    }catch(Exception $e){
+        throw new bException('email_library_init(): Failed', $e);
+    }
 }
 
 

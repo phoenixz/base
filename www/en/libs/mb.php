@@ -33,12 +33,12 @@
  */
 function mb_library_init(){
     try{
-        if(!function_exists('utf8_decode')){
-            throw new bException(tr('mb_library_init: php module "xml" appears not to be installed. Please install the modules first. On Ubuntu and alikes, use "sudo apt-get -y install php-xml php-mbstring; sudo php5enmod xml; sudo php5enmod mbstring" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php-xml php-mbstring" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
+        if(!extension_loaded('mbstring')){
+            throw new bException(tr('mb_library_init: php module "mbstring" appears not to be installed. Please install the modules first. On Ubuntu and alikes, use "sudo apt-get -y install php-mbstring; sudo php5enmod mbstring" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php-mbstring" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'missing-module', 'mb');
         }
 
-        if(!function_exists('mb_strlen')){
-            throw new bException(tr('mb_library_init: php module "mbstring" appears not to be installed. Please install the modules first. On Ubuntu and alikes, use "sudo apt-get -y install php-xml php-mbstring; sudo php5enmod xml; sudo php5enmod mbstring" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php-xml php-mbstring" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'not_available');
+        if(!utf8_decode('xml')){
+            throw new bException(tr('mb_library_init: php module "xml" appears not to be installed. Please install the modules first. On Ubuntu and alikes, use "sudo apt-get -y install php-xml; sudo php5enmod xml" to install and enable the module., on Redhat and alikes use ""sudo yum -y install php-xml" to install the module. After this, a restart of your webserver or php-fpm server might be needed'), 'missing-module', 'mb');
         }
 
     }catch(Exception $e){

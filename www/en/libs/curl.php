@@ -4,23 +4,45 @@
  *
  * Functions used for cURL things
  *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
- * @copyright Johan Geuze, Sven Oostenbrink <support@capmega.com>
+ * @category Function reference
+ * @package curl
+ * @module curl
  */
 
 
 
-load_config('curl');
+/*
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package email-clients
+ *
+ * @return void
+ */
+function curl_library_init(){
+    try{
+        if(!extension_loaded('imap')){
+            throw new bException(tr('email_library_init(): The PHP "curl" module is not available, please install it first. On ubuntu install the module with "apt -y install php-curl"; a restart of the webserver or php fpm server may be required'), 'missing-module');
+        }
 
-if(!function_exists('curl_init')){
-    throw new bException('PHP CURL module is not installed. Install PHP CURL on Ubuntu with "sudo apt-get install php-curl", or on Redhat with "sudo yum install php-curl"', 'not-installed');
+        load_config('curl');
+
+    }catch(Exception $e){
+        throw new bException('curl_library_init(): Failed', $e);
+    }
 }
 
 
 
- /*
-  * Get data using an sven HTTP proxy server
-  */
+/*
+ * Get data using an sven HTTP proxy server
+ */
 function curl_get_proxy($url, $file = '', $serverurl = null) {
     global $_CONFIG;
 
