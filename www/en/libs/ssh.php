@@ -814,7 +814,7 @@ function ssh_stop_control_master($socket = null){
  */
 function ssh_validate_account($ssh){
     try{
-        load_libs('validate');
+        load_libs('validate,seo');
 
         $v = new validate_form($ssh, 'name,username,ssh_key,description');
         $v->isNotEmpty ($ssh['name'], tr('No account name specified'));
@@ -833,6 +833,16 @@ function ssh_validate_account($ssh){
         if(is_numeric(substr($ssh['name'], 0, 1))){
             $v->setError(tr('Please ensure that the account name does not start with a number'));
         }
+
+        $v->isValid();
+
+        $exists = sql_get('SELECT `id` FROM `ssh_accounts` WHERE (`name` = :name OR `username` = :username) AND `id` != :id LIMIT 1', true, array(':name' => $ssh['name'], ':username' => $ssh['username'], ':id' => isset_get($ssh['id'], 0)), 'core');
+
+        if($exists){
+            $v->setError(tr('An SSH account with the username ":username" or name ":name" already exists', array(':name' => $ssh['name'], ':username' => $ssh['username'])));
+        }
+
+        $ssh['seoname'] = seo_unique($ssh['name'], 'ssh_accounts', isset_get($ssh['id']));
 
         $v->isValid();
 

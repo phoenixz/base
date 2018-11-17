@@ -62,7 +62,7 @@
 /*
  * Framework version
  */
-define('FRAMEWORKCODEVERSION', '1.22.1');
+define('FRAMEWORKCODEVERSION', '1.22.2');
 define('PHP_MINIMUM_VERSION' , '5.5.9');
 
 
@@ -285,7 +285,7 @@ class core{
      * @package startup
      *
      * @param string $key The key for the value that needs to be stored
-     * @param (optional) mixed $value The data that has to be stored. If no value is specified, the function will return the value for the specified key.
+     * @param mixed $value The data that has to be stored. If no value is specified, the function will return the value for the specified key.
      * @return mixed If a value is specified, this function will return the specified value. If no value is specified, it will return the value for the specified key.
      */
     public function register($key, $value = null){
@@ -319,7 +319,7 @@ class core{
      * @category Function reference
      * @package startup
      *
-     * @param (optional) string $script The key for the value that needs to be stored
+     * @param string $script The key for the value that needs to be stored
      * @return mixed If $script is specified, this function will return true if $script matches SCRIPT, or false if it does not. If $script is not specified, it will return SCRIPT
      */
     public function script($script = null){
@@ -401,83 +401,10 @@ class bException extends Exception{
      *
      * @param mixed $messages
      * @param string $code
-     * @param (optional) mixed $data
+     * @param mixed $data
      */
     function __construct($messages, $code, $data = null){
-        global $core;
-
-        $messages = array_force($messages, "\n");
-
-        if(is_object($code)){
-            /*
-             * Specified code is not a code but a previous exception. Get
-             * history from previous exception and add new exception message
-             */
-            $e    = $code;
-            $code = null;
-
-            if($e instanceof bException){
-                $this->messages = $e->getMessages();
-                $this->data     = $e->getData();
-
-            }else{
-                if(!($e instanceof Exception)){
-                    throw new bException(tr('bException: Specified exception object for exception ":message" is not valid (either it is not an object or not an exception object)', array(':message' => $messages)), 'invalid');
-                }
-
-                $this->messages[] = $e->getMessage();
-            }
-
-            $orgmessage = $e->getMessage();
-            $code       = $e->getCode();
-
-        }else{
-            if(!is_scalar($code)){
-                throw new bException(tr('bException: Specified exception code ":code" for exception ":message" is not valid (should be either scalar, or an exception object)', array(':code' => $code, ':message' => $messages)), 'invalid');
-            }
-
-            $orgmessage = reset($messages);
-            $this->data = $data;
-        }
-
-        if(!$messages){
-            throw new Exception(tr('bException: No exception message specified in file ":file" @ line ":line"', array(':file' => current_file(1), ':line' => current_line(1))));
-        }
-
-        if(!is_array($messages)){
-            $messages = array($messages);
-        }
-
-// :DELETE: Exceptions should only logged if uncaught, since only those matter. Caught exceptions have been handled by the system already
-//        try{
-//            /*
-//             * Only log to file if core is available and config_ok (configuration is loaded correclty)
-//             */
-//            if(!empty($core) and !empty($core->register['ready'])){
-//                foreach($messages as $message){
-//                    log_file($message, 'exceptions');
-//                }
-//            }
-//
-//        }catch(Exception $f){
-//            /*
-//             * Exception database logging failed. Ignore, since from here on there is little to do
-//             */
-//
-//// :TODO: Add notifications!
-//        }
-
-        parent::__construct($orgmessage, null);
-        $this->code = (string) $code;
-
-        /*
-         * If there are any more messages left, then add them as well
-         */
-        if($messages){
-            foreach($messages as $id => $message){
-                $this->messages[] = $message;
-            }
-        }
+        return include(__DIR__.'/handlers/startup-bexception-construct.php');
     }
 
 
@@ -557,7 +484,7 @@ class bException extends Exception{
      * @category Function reference
      * @package startup
      *
-     * @param (optional) string $separator If specified, all messages will be returned as a string, each message separated by the specified $separator. If not specified, the messages will be returned as an array
+     * @param string $separator If specified, all messages will be returned as a string, each message separated by the specified $separator. If not specified, the messages will be returned as an array
      * @return mixed An array with the messages list for this exception. If $separator has been specified, this method will return all messages in one string, each message separated by $separator
      */
     public function getMessages($separator = null){
@@ -772,8 +699,8 @@ function ensure_variable(&$variable, $initialize){
  * @package startup
  *
  * @param string $text
- * @param (optional) array $replace
- * @param (optional) boolean $verify
+ * @param array $replace
+ * @param boolean $verify
  * @return string
  */
 function tr($text, $replace = null, $verify = true){
