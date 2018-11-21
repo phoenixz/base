@@ -1426,127 +1426,6 @@ function log_console($messages = '', $color = null, $newline = true, $filter_dou
 
 
 /*
- * Log specified message to database, but only if we are in console mode!
- */
-function log_database($messages, $type = 'unknown'){
-    global $core;
-    static $q, $last, $busy;
-
-    try{
-        switch(str_until($type, '/')){
-            case 'VERBOSE':
-                if(!VERBOSE){
-                    /*
-                     * Only log this if we're in verbose mode
-                     */
-                    return false;
-                }
-
-                /*
-                 * Remove the VERBOSE
-                 */
-                $type = str_replace('/', '', str_replace('VERBOSE', '', $type));
-                break;
-
-            case 'QUIET':
-                if(QUIET){
-                    /*
-                     * Only log this if we're in verbose mode
-                     */
-                    return false;
-                }
-
-                /*
-                 * Remove the QUIET
-                 */
-                $type = str_replace('/', '', str_replace('QUIET', '', $type));
-                break;
-
-            case 'DEBUG':
-                if(!debug()){
-                    /*
-                     * Only log this if we're in debug mode
-                     */
-                    return false;
-                }
-
-                /*
-                 * Remove the QUIET
-                 */
-                $type = str_replace('/', '', str_replace('DEBUG', '', $type));
-        }
-
-        /*
-         * Avoid endless looping if the database log fails
-         */
-        if(!$busy){
-            $busy = true;
-
-            if(!empty($core->register['no-db'])){
-                /*
-                 * Don't log to DB, there is no DB
-                 */
-                return $messages;
-            }
-
-            if(is_object($messages)){
-                if($messages instanceof bException){
-                    $messages = $messages->getMessages();
-                    $type     = 'exception';
-                }
-
-                if($messages instanceof Exception){
-                    $messages = $messages->getMessage();
-                    $type     = 'exception';
-                }
-            }
-
-            if($messages == $last){
-                /*
-                * We already displayed this message, skip!
-                */
-                return $messages;
-            }
-
-            $last = $messages;
-
-            if(is_numeric($type)){
-                throw new bException(tr('log_database(): Type is ":type" for message ":message" is numeric but should not be numeric', array(':type' => $type, ':message' => $message)));
-            }
-
-            foreach(array_force($messages, "\n") as $message){
-                sql_query('INSERT INTO `log` (`createdby`, `ip`, `type`, `message`)
-                           VALUES            (:createdby , :ip , :type , :message )',
-
-                           array(':createdby' => isset_get($_SESSION['user']['id']),
-                                 ':ip'        => isset_get($_SERVER['REMOTE_ADDR']),
-                                 ':type'      => cfm($type),
-                                 ':message'   => $message), 'core');
-            }
-
-            $busy = false;
-        }
-
-        return $messages;
-
-    }catch(Exception $e){
-//log_database($e);
-// :TODO: Add Notifications!
-        if($log_file){
-            log_file(tr('log_database(): Failed to log message ":message" to database', array(':message' => $messages)), 'error');
-        }
-
-        /*
-         * Don't exception here because the exception may cause another log_database() call and loop endlessly
-         * Don't try to log again!
-         */
-        $core->register['no-db'] = true;
-    }
-}
-
-
-
-/*
  * Log specified message to file.
  */
 function log_file($messages, $class = 'syslog', $color = null){
@@ -4672,6 +4551,26 @@ function shutdown(){
 
     }catch(Exception $e){
         throw new bException(tr('shutdown(): Failed'), $e);
+    }
+}
+
+
+
+/*
+ * BELOW FOLLOW DEPRECATED FUNCTIONS
+ */
+
+
+
+/*
+ * DEPRECATED
+ */
+function log_database($messages, $class = 'syslog'){
+    try{
+        return log_file($messages, $class);
+
+    }catch(Exception $e){
+        throw new bException('log_database(): Failed', $e);
     }
 }
 ?>
