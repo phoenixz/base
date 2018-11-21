@@ -126,6 +126,9 @@ try{
     }
 
 }catch(Exception $e){
+    log_console(tr('Script ":script" threw the following exception', array(':script' => $script)), 'error');
+    log_console($e);
+
     $GLOBALS['argv'] = $argv;
 
     if($_script_exec_file){
