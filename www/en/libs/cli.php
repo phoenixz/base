@@ -683,6 +683,18 @@ function cli_run_once($action = 'exception', $force = false){
  *
  * The result will be removed from $argv, but will remain stored in a static
  * variable which will return the same result every subsequent function call
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package cli
+ * @see cli_argument()
+ * @see cli_arguments()
+ *
+ * @param natural $index The method number that is requested. 0 (default) is the first method, 1 the second, etc.
+ * @param mixed $default The value to be returned if no method was found
+ * @return array The results of the executed SSH commands in an array, each entry containing one line of the output
  */
 function cli_method($index = null, $default = null){
     global $argv;
