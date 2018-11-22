@@ -213,6 +213,7 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
         array_default($params, 'method'         , null);
         array_default($params, 'dns_cache'      , true);
         array_default($params, 'verify_ssl'     , true);
+        array_default($params, 'user_pwd'       , false);
         array_default($params, 'proxies'        , $_CONFIG['curl']['proxies']);
         array_default($params, 'simulation'     , false);   // false, partial, or full
         array_default($params, 'sleep'          , 1000);    // Sleep howmany microseconds between retries
@@ -314,6 +315,10 @@ function curl_get($params, $referer = null, $post = false, $options = array()){
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT,  $params['connect_timeout']);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, ($params['verify_ssl'] ? 2 : 0));
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER,  $params['verify_ssl']);
+
+            if($params['user_pwd']){
+                curl_setopt($ch, CURLOPT_USERPWD,  $params['user_pwd']);
+            }
 
             if($params['log']){
                 if($params['log'] === true){
