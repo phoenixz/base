@@ -438,9 +438,21 @@ function user_remove_from_group($user, $groups, $validate = true){
 
 
 /*
- * `cate the specified user with the specified password
+ * Authenticate the specified user with the specified password
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package user
+ *
+ * @param string $username
+ * @param string $password
+ * @param string $captcha
+ * @param string $status
+ * @return
  */
-function user_authenticate($username, $password, $captcha = null){
+function user_authenticate($username, $password, $captcha = null, $status = null){
     global $_CONFIG;
 
     try{
@@ -451,17 +463,38 @@ function user_authenticate($username, $password, $captcha = null){
             throw new bException('user_authenticate(): Specified username is not valid', 'invalid');
         }
 
+        if($status){
+            $execute = sql_in($status);
+            $where   = ' WHERE  `status`   IN ('.sql_values($in).')
+                         AND   (`email`    = :email
+                         OR     `username` = :username)';
+
+            $execute[':email']    = $username;
+            $execute[':username'] = $username;
+
+        }elseif($status === null){
+            $where = ' WHERE  `status`   IS NULL
+                       AND   (`email`    = :email
+                       OR     `username` = :username)';
+
+            $execute = array(':email'    => $username,
+                             ':username' => $username);
+
+        }elseif($status === false){
+            $where = ' WHERE (`email`    = :email
+                       OR     `username` = :username)';
+
+            $execute = array(':email'    => $username,
+                             ':username' => $username);
+
+        }else{
+            throw new bException(tr('user_authenticate(): Unknown status ":status" specified', array(':status' => $status)), 'unknown');
+        }
+
         $user = sql_get('SELECT *,
                                 `locked_until` - UTC_TIMESTAMP() AS `locked_left`
 
-                         FROM   `users`
-
-                         WHERE  `status`   IS NULL
-                         AND   (`email`    = :email
-                         OR     `username` = :username)',
-
-                         array(':email'    => $username,
-                               ':username' => $username));
+                         FROM   `users` '.$where, $execute);
 
         if(!$user){
             log_database(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'authentication/not-found');
