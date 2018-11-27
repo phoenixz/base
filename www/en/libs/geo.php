@@ -13,7 +13,7 @@
 /*
  * Get HTML countries select list
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -64,7 +64,7 @@ function geo_location_from_ip($ip = null) {
 /*
  * Get HTML countries select list
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -107,7 +107,7 @@ function geo_countries_select($params) {
 /*
  * Get HTML states select list
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -163,7 +163,7 @@ function geo_states_select($params) {
 /*
  * Get HTML cities select list
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -216,7 +216,7 @@ function geo_cities_select($params) {
 /*
  * Get information about the specified country from the database and return it
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -285,7 +285,7 @@ function geo_get_country($country, $single_column = false){
 /*
  * Get information about the specified country from the database and return it
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -343,7 +343,7 @@ function geo_get_state($state, $single_column = false){
 /*
  * Get information about the specified country from the database and return it
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -418,7 +418,7 @@ function geo_get_city($city, $states_id = null, $single_column = false){
 /*
  * Return the closest city to the specified latitude / longitude
  *
- * @author Marcos Prudencio <marcos@capmega.com>
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
  * @copyright Copyright (c) 2018 Capmega
  * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
  * @category Function reference
@@ -491,6 +491,45 @@ function geo_get_nearest_city($latitude, $longitude, $filters = null, $columns =
 
     }catch(bException $e){
         throw new bException('geo_get_nearest_city() Failed', $e);
+    }
+}
+
+
+
+
+/*
+ * Detect client location
+ *
+ * This function will send javascript code to the client that will request the
+ * location from the browser. If this is allowed, the location will be sent to
+ * the configured URL. If this is denied, the configured URL can attempt a GEOIP
+ * location lookup
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geo
+ *
+ * @return string The HTML javascript required for client location detection
+ */
+function geo_detect_client_location($browser_location_url, $geoip_url = null){
+    try{
+        html_load_js('base/base');
+
+        if(empty($geoip_url)){
+            $geoip_url = $browser_location_url;
+        }
+
+        $html = html_script('
+            $.geoLocation(function(){},
+                          function(){});
+                ');
+
+        return $html;
+
+    }catch(bException $e){
+        throw new bException('geo_detect_client_location() Failed', $e);
     }
 }
 ?>
