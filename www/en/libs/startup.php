@@ -3089,13 +3089,9 @@ function cdn_domain($file, $section = 'pub', $false_on_not_exist = false, $force
                 }else{
                     $section = $_CONFIG['cdn']['prefix'];
                 }
-
-                if($_CONFIG['language']['supported']){
-                    $section = '/'.LANGUAGE.$section;
-                }
             }
 
-            return domain($file, null, $section, $_CONFIG['cdn']['domain'], '');
+            return domain($file, null, $section, $_CONFIG['cdn']['domain']);
         }
 
         if($section == 'pub'){
