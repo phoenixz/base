@@ -465,7 +465,20 @@ function user_authenticate($username, $password, $captcha = null, $status = null
 
         if($status){
             $in = sql_in($status);
-            $where   = ' WHERE  `status`   IN ("'.implode('","', array_values($in)).'")
+            $status_values = '';
+            $status_null   = false;
+
+            foreach ($in as $status_value) {
+                if(strcasecmp('null', $status_value) == 0){
+                    $status_null    = true;
+                }else{
+                    $status_values .= '"'.$status_value.'", ';
+                }
+            }
+
+            $status_values = substr($status_values, 0, -2);
+
+            $where   = ' WHERE  (`status`   IN ('.$status_values.') '.($status_null?' OR `status` IS NULL':'').')
                          AND   (`email`    = :email
                          OR     `username` = :username)';
 
@@ -501,7 +514,7 @@ function user_authenticate($username, $password, $captcha = null, $status = null
             throw new bException(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'not-found');
         }
 
-        if($status and strpos($status, $user['status']) === false ){
+        if($status and (strpos($status, $user['status']) === false and ($status_null and !$user['status'] == "")) ){
             throw new bException(tr('user_authenticate(): Specified user account has status ":status" and cannot be authenticated', array(':status' => $user['status'])), 'inactive');
         }
 
