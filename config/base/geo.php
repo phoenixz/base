@@ -9,6 +9,14 @@
  * @copyright Sven Oostenbrink <support@capmega.com>, Johan Geuze
  */
 $_CONFIG['geo'] = array('lookup' => 'geonames',
+
+                        'detect' => array('default'     => array('country' => 'mexico',
+                                                                 'state'   => 'puebla',
+                                                                 'city'    => 'puebla'),
+
+                                          'urls'        => array('success' => '/ajax/geo/detect/success.php',
+                                                                 'fail'    => '/ajax/geo/detect/fail.php')),
+
                         'cities' => array('filter_type' => ' OR ',
                                           'filters'     => array('min_population' => 200000,
                                                                  'feature_code'   => 'PPLA,PPLA2')));
