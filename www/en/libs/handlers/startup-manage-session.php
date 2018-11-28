@@ -26,6 +26,13 @@ if(debug() or !$_CONFIG['cache']['http']['enabled']){
 }
 
 /*
+ * Correctly detect the remote IP
+ */
+if(!empty($_SERVER['HTTP_X_FORWARDED_FOR'])){
+    $_SERVER['REMOTE_ADDR'] = $_SERVER['HTTP_X_FORWARDED_FOR'];
+}
+
+/*
  * Setup session handlers
  */
 switch($_CONFIG['sessions']['handler']){
