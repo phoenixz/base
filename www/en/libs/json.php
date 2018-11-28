@@ -239,6 +239,14 @@ function json_message($message, $data = null){
     global $_CONFIG;
 
     try{
+        if(is_object($message)){
+            /*
+             * This is (presumably) an exception
+             */
+            notify($message);
+            $message = $message->getRealCode();
+        }
+
         switch($message){
             case 301:
                 // FALLTHROUGH
@@ -257,7 +265,11 @@ function json_message($message, $data = null){
 
             case 400:
                 // FALLTHROUGH
+            case 'unknown':
+                // FALLTHROUGH
             case 'invalid':
+                // FALLTHROUGH
+            case 'validation':
                 json_error(null, null, ($data ? $data : 'BAD-REQUEST'), 400);
 
             case 403:
@@ -318,7 +330,8 @@ function json_message($message, $data = null){
                 json_reply(null, 'RELOAD');
 
             default:
-                throw new bException(tr('json_message(): Unknown message ":message" specified', array(':message' => $message)), 'unknown');
+                notify(tr('json_message(): Unknown message ":message" specified', array(':message' => $message)));
+                json_error(null, (debug() ? $data : null), 'ERROR', 500);
         }
 
     }catch(Exception $e){
