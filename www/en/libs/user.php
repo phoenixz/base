@@ -473,7 +473,8 @@ function user_authenticate($username, $password, $captcha = null, $status = null
             $in   = sql_in($status);
             $null = false;
 
-            foreach($in as $key => $value){
+
+            foreach($in as $key => $status_value){
                 if(($status_value === 'null') or ($status_value === null)){
                     $null = true;
                     unset($in[$key]);
@@ -506,6 +507,8 @@ function user_authenticate($username, $password, $captcha = null, $status = null
         }else{
             throw new bException(tr('user_authenticate(): Unknown status ":status" specified', array(':status' => $status)), 'unknown');
         }
+
+        $execute = array_merge($execute, $in);
 
         $user = sql_get('SELECT *, `locked_until` - UTC_TIMESTAMP() AS `locked_left`
 
