@@ -39,20 +39,60 @@ clear-cache                  - Clear the `html_img_cache` cache table that
 
 OPTIONS
 
---all(optional)              - Process all project images
+[--all]                      - Process all project images
 
---keep-aspectratio (optional)- Ensure image aspect ratio
+[--keep-aspectratio]         - Ensure image aspect ratio
 
---quality (optional)         - JPEG Quality factor (0 - 100 [60])
+[--quality QUALITY]          - JPEG Quality factor (0 - 100 [60])
 
---interlace (optional)       - Make image load interlaced (jpeg, gif, png,
-                               none, line, plane, partition, auto [Line])
+[--interlace VALUE]          - Make image load interlaced (OPTION can be jpeg,
+                               gif, png, none, line, plane, partition,
+                               auto [Line])
 
---strip (optional)           - Strip exif data (true - false [true])
+[--strip]                    - Strips exif data if specified
 
---blur (optional)            - Blur factor. The higher this factor, the lower
-                               the image size, though this may affect image
-                               quality (0x1 - 10x10 [1x3])
+[--blur FACTOR]              - Blur by FACTOR (0x1 - 10x10 [1x3]). The higher
+                               this factor, the lower the image size (as the
+                               image will contain less information) though
+                               this will affect image quality
+
+[--mirror [RANDOM]]          - Mirror the image. If RANDOM (0 - 100) is
+                               specified, there will be a RANDOM % chance that
+                               the image will be mirrored.
+
+[--flip [RANDOM]]            - Flip the image over its horizontal axis. If
+                               RANDOM (0 - 100) is specified, there will be a
+                               RANDOM % chance that the image will be mirrored.
+
+[--skew COORDINATES]         - Distort the image by skewing it with the
+        [+/- RANDOM]]          specified coordinates. If RANDOM is specified,
+                               the actual skewing may be off by
+                               random 0 - RANDOM %
+
+[--rotate DEGREES            - Rotate the image wiht the specified amount of
+          [+/- RANDOM]]        degrees. If RANDOM is specified, the actual
+                               rotation may be off by random 0 - RANDOM %
+
+[--brightness BRIGHTNESS     - Adjust the brightness of the image with the
+              [+/- RANDOM]]    specified amount (-100 - 100). If RANDOM is
+                               specified, the actual applied brightness may be
+                               off by BRIGHTNESS + random(0 +/- RANDOM). For
+                               example, --brightness 0 50 may end up with a
+                               brightness from -50 to + 50
+
+[--contrast CONTRAST         - Adjust the contrast of the image with the
+            [+/- RANDOM]]      specified amount (-100 - 100). If RANDOM is
+                               specified, the actual applied contrast may be
+                               off by CONTRAST + random(0 +/- RANDOM). For
+                               example, --contrast 0 50 may end up with a
+                               contrast from -50 to + 50
+
+[--gamma GAMMA               - Adjust the gamma of the image with the specified
+         [+/- RANDOM]]         amount (-100 - 100). If RANDOM is specified, the
+                               actual applied gamma may be off by
+                               GAMMA + random(0 +/- RANDOM). For example,
+                               --gamma 0 50 may end up with a gamma from
+                               -50 to + 50
 
 --defines                    - imagemagick -defines
 
