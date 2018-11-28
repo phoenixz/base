@@ -1758,7 +1758,7 @@ function email_validate_account($account, $client){
 
         $v->isNatural($account['poll_interval'], tr('Please provide a natural numeric poll interval'), 0);
 
-        $account['seoemail'] = seo_unique($account['email'], 'email'.$client.'_accounts', $account['id'], 'seoemail');
+        $account['seoemail'] = seo_unique($account['email'], 'email'.$client.'_accounts', $_SESSION['user']['id'], 'seoemail');
 
         $v->isValid();
 
