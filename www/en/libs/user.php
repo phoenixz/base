@@ -508,7 +508,7 @@ function user_authenticate($username, $password, $captcha = null, $status = null
             throw new bException(tr('user_authenticate(): Unknown status ":status" specified', array(':status' => $status)), 'unknown');
         }
 
-        $execute = array_merge($execute, $in);
+        $execute = array_merge($execute, isset_get($in, array()));
 
         $user = sql_get('SELECT *, `locked_until` - UTC_TIMESTAMP() AS `locked_left`
 
