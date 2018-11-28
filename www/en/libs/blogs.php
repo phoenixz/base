@@ -524,7 +524,7 @@ function blogs_update_post_status($blog, $params, $list, $status){
                 case 'unpublished':
 // :TODO: sitemap script can detect new and updated links, it cannot detect deleted links, so with deleting we always force generation of new sitemap files. Make a better solution for this
                     $force = true;
-                    sitemap_delete($post['url']);
+                    sitemap_delete_entry($post['url']);
                     break;
 
                 case 'published':
@@ -2369,7 +2369,7 @@ function blogs_update_urls($blogs = null, $category = null){
                              * Page URL changed, delete old entry from the sitemap table to
                              * avoid it still showing up in sitemaps, since this page is now 404
                              */
-                            sitemap_delete($url);
+                            sitemap_delete_entry($url);
                         }
 
                         if($post['status'] == $params['status']){
