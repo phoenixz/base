@@ -237,17 +237,7 @@ console.log("geoLocation");
                 navigator.geolocation.getCurrentPosition(cb, cbe);
 
             } else {
-                // Build the URL to query
-                var url = "http://www.geoplugin.net/json.gp?jsoncallback=?";
-
-                // Utilize the JSONP API
-                $.get(url)
-                    .done(function(data){
-                        cb(data);
-                    })
-                    .fail(function(a, b, e) {
-                        $.handleFail(e, cbe);
-                    });
+                cbe();
             }
 
         } catch(e) {
