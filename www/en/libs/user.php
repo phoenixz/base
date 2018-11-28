@@ -464,8 +464,24 @@ function user_authenticate($username, $password, $captcha = null, $status = null
         }
 
         if($status){
-            $in = sql_in($status);
-            $where   = ' WHERE  `status`   IN ("'.implode('","', array_values($in)).'")
+            /*
+             * If specified, status will be treated as a list or array of
+             * allowed statuses. If NULL is still authorized, then it can be
+             * specified either as null (in an array), or "null" (in a string
+             * list, or array)
+             */
+            $in   = sql_in($status);
+            $null = false;
+
+            foreach($in as $key => $value){
+                if(($status_value === 'null') or ($status_value === null)){
+                    $null = true;
+                    unset($in[$key]);
+                    break;
+                }
+            }
+
+            $where   = ' WHERE (`status`   IN ('.sql_in_columns($in).') '.($null ? ' OR `status` IS NULL' : '').')
                          AND   (`email`    = :email
                          OR     `username` = :username)';
 
@@ -491,18 +507,12 @@ function user_authenticate($username, $password, $captcha = null, $status = null
             throw new bException(tr('user_authenticate(): Unknown status ":status" specified', array(':status' => $status)), 'unknown');
         }
 
-        $user = sql_get('SELECT *,
-                                `locked_until` - UTC_TIMESTAMP() AS `locked_left`
+        $user = sql_get('SELECT *, `locked_until` - UTC_TIMESTAMP() AS `locked_left`
 
                          FROM   `users` '.$where, $execute);
 
         if(!$user){
-            log_database(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'authentication/not-found');
-            throw new bException(tr('user_authenticate(): Specified user account ":username" not found', array(':username' => $username)), 'not-found');
-        }
-
-        if($status and strpos($status, $user['status']) === false ){
-            throw new bException(tr('user_authenticate(): Specified user account has status ":status" and cannot be authenticated', array(':status' => $user['status'])), 'inactive');
+            throw new bException(tr('user_authenticate(): Specified user account ":username" with status ":status" not found', array(':username' => $username, ':status' => $status)), 'not-found');
         }
 
 
