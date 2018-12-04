@@ -1,6 +1,6 @@
 <?php
 //Debug or not?
-$_CONFIG['debug']                  = true;
+$_CONFIG['debug']['enabled']       = true;
 
 // Content configuration
 $_CONFIG['content']['autocreate']  = true;

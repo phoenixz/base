@@ -4,7 +4,7 @@
  */
 
 //Debug or not?
-$_CONFIG['debug']                       = true;
+$_CONFIG['debug']['enabled']            = false;
 
 // Detect browser?
 $_CONFIG['browser_detect']	            = false;
