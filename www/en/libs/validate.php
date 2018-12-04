@@ -1429,11 +1429,22 @@ class validate_form {
 
 
     /*
+     * Validate a string and check if is a valid date
      *
+     * @author Camilo Antonio Rodriguez Cruz <crodriguez@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package validate
+     *
+     * @return boolean
      */
-    function isDate(&$value, $message = null, $flags = null){
+    public function isDate(string $date, string $format = 'Y-m-d', string $message = "this is not a valid date"){
         try{
-// :TODO: IMPLEMENT
+            $d = DateTime::createFromFormat($format, $date);
+            if (!($d && $d->format($format) == $date)) {
+                return $this->setError($message);
+            }
 
         }catch(Exception $e){
             throw new bException('validate_form::isDate(): Failed', $e);
@@ -1715,6 +1726,27 @@ class validate_form {
 
         }catch(Exception $e){
             throw new bException('validate_form::getErrors(): Failed', $e);
+        }
+    }
+
+
+
+    /*
+     * Validate a string is a city
+     *
+     * @author Camilo Antonio Rodriguez Cruz <crodriguez@capmega.com>
+     * @copyright Copyright (c) 2018 Capmega
+     * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+     * @category Function reference
+     * @package validate
+     *
+     * @return boolean
+     */
+    public function isCity(string $city, string $message = "this is not a valid city"){
+        try{
+            // :TODO: add this validate
+        }catch(Exception $e){
+            throw new bException('validate_form::isCity(): Failed', $e);
         }
     }
 }
