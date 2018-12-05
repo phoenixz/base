@@ -13,7 +13,7 @@ try{
     $argv  = $GLOBALS['argv'];
 
     /*
-     * Process command line arguments
+     * Ensure that arguments are specified as array
      */
     if(!$arguments){
         $arguments = array();
