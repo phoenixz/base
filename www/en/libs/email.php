@@ -39,6 +39,8 @@ function email_library_init(){
             throw new bException(tr('email_library_init(): The PHP "imap" module is not available, please install it first. On ubuntu install the module with "apt -y install php-imap"; a restart of the webserver or php fpm server may be required'), 'missing-module');
         }
 
+        load_config('email');
+
     }catch(Exception $e){
         throw new bException('email_library_init(): Failed', $e);
     }
