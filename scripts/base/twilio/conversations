@@ -108,7 +108,7 @@ switch(cli_method()){
                                      `modifiedon`    = :modifiedon,
                                      `repliedon`     = NOW()
 
-                              WHERE  `id` = :id');
+                              WHERE  `id`            = :id');
 
         }else{
             $p = sql_prepare('UPDATE `sms_conversations`
@@ -118,7 +118,7 @@ switch(cli_method()){
                                      `modifiedon`    = :modifiedon,
                                      `repliedon`     = :repliedon
 
-                              WHERE  `id` = :id');
+                              WHERE  `id`            = :id');
         }
 
         while($conversation = sql_fetch($r)){
