@@ -334,7 +334,7 @@ function http_headers($params, $content_length){
         http_response_code($params['http_code']);
 
         if($params['http_code'] != 200){
-            log_file(tr('Base sent HTTP:http', array(':http' => $params['http_code'])), 'warning');
+            log_file(tr('Base sent HTTP:http for URL ":url"', array(':http' => $params['http_code'], ':url' => (empty($_SERVER['HTTPS']) ? 'http' : 'https').'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'])), 'warning');
         }
 
         foreach($headers as $header){
