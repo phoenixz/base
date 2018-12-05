@@ -706,6 +706,17 @@ function cli_method($index = null, $default = null){
         }
 
         if(isset($method[$index])){
+            $reappeared = array_search($method[$index], $argv);
+
+            if(is_numeric($reappeared)){
+                /*
+                 * The argument has been readded to $argv. This is very likely
+                 * happened by safe_exec() that included the specified script
+                 * into itself, and had to reset the arguments array
+                 */
+                unset($argv[$reappeared]);
+            }
+
             return $method[$index];
         }
 
