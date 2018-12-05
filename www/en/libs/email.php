@@ -134,12 +134,10 @@ function email_poll($params){
             throw new bException(tr('email_poll(): Both peek and delete were specified, though they are mutually exclusive. Please specify one or the other'), 'conflict');
         }
 
-        if(PLATFORM_CLI){
-            log_console(tr('Polling email account ":account"', array(':account' => $params['account'])));
+        log_console(tr('Polling email account ":account"', array(':account' => $params['account'])), 'VERBOSE/cyan');
 
-            if($params['peek']){
-                log_console(tr('Using peek flag'));
-            }
+        if($params['peek']){
+            log_console(tr('Using peek flag'), 'VERBOSE');
         }
 
         $userdata = email_get_client_account($params['account']);
