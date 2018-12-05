@@ -2157,6 +2157,7 @@ function file_execute_mode($path, $mode, $callback, $params = null){
             chmod($path, $mode);
         }
 
+        $path   = slash($path);
         $retval = $callback($params, $path, $mode);
 
         if($mode){
