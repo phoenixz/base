@@ -158,7 +158,13 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
                     break;
 
                 default:
-                    if(ssh_host_is_known($server['domain'], $server['port']) === false){
+                    /*
+                     * Check if the exception perhaps was caused by missing ssh server fingerprints (common enough to test)
+                     */
+show('aaaaaaaaaaaaaaaaa');
+                    $known = ssh_host_is_known($server['domain'], $server['port']);
+showdie($known);
+                    if($known === false){
                         /*
                          * There are no fingerprints availabe in either the
                          * `ssh_fingerprints` table or known_hosts file
@@ -166,87 +172,90 @@ function ssh_exec($server, $commands = null, $background = false, $function = nu
                         $e->setCode('host-verification-failed');
                         throw new bException(tr('ssh_exec(): The domain ":domain" has no fingerprints available in neither the known_hosts file nor `ssh_fingerprints`', array(':domain' => $server['domain'])), $e);
 
-                    }elseif(is_numeric(ssh_host_is_known($server['domain'], $server['port']))){
+                    }elseif(is_numeric($known)){
                         /*
                          * There are no fingerprints availabe in the known_hosts
                          * file, but they were in the `ssh_fingerprints` table.
                          * The fingerprints have been added to the known_hosts
                          * file so we can retry the command.
                          */
-                        log_console(tr('Retrying execution of command ":command"', array(':command' => $server['command'])), 'yellow');
+                        log_console(tr('Retrying execution of command ":command"', array(':command' => $server['commands'])), 'yellow');
                         return ssh_exec($server, $commands, $background, $function, $ok_exitcodes);
                     }
 
-                    $data = $e->getData();
-
-                    if(($function !== 'passthru') and $data){
-                        foreach($data as $line){
-                            /*
-                             * SSH key authentication failed
-                             */
-                            if($line === 'Host key verification failed.'){
-                                $e = new bException(tr('ssh_exec(): The host ":domain" SSH key fingerprint does not match any of the available finger prints in the ROOT/data/ssh/known_hosts file. This means somegbody is faking this server, or the server was reinstalled', array(':domain' => $server['domain'])), 'host-verification-failed');
-                                $not_check_inet = true;
-
-                                foreach($data as $line){
-                                    /*
-                                     * Did key authentication fail because of
-                                     * missing fingerprint or because it didn't
-                                     * match?
-                                     */
-                                    if(preg_match('/No [a-z0-9-]+ host key is known for/i', $line)){
-                                        /*
-                                         * It's only missing, so we only have to
-                                         * add it
-                                         */
-                                        $e = new bException(tr('ssh_exec(): The host ":domain" has no SSH key fingerprint in the known_hosts file.', array(':domain' => $server['domain'])), 'warning/host-verification-missing');
-
-                                        /*
-                                         * Is the server fingerprint perhaps already
-                                         * available in the `ssh_fingerprints`
-                                         * table? If so, we can rebuild the
-                                         * known_hosts file
-                                         */
-                                        $exists = sql_get('SELECT `id` FROM `ssh_fingerprints` WHERE `domain` = :domain AND `port` = :port LIMIT 1', true, array(':domain' => $server['domain'], ':port' => $server['port']));
-
-                                        if($exists){
-                                            /*
-                                             * Hostname fingerprints are available
-                                             * in ssh_fingerprints. Rebuild the
-                                             * known_hosts file, and retry command
-                                             */
-                                            log_console(tr('The host ":domain" has no SSH key fingerprint in the ROOT/data/ssh/known_hosts file, but the keys were found in the ssh_fingerprints table. Rebuilding known_hosts file and retrying execution', array(':domain' => $server['domain'])), 'yellow');
-                                            ssh_rebuild_known_hosts();
-                                            return ssh_exec($server, $commands, $background, $function, $ok_exitcodes);
-                                        }
-
-                                        /*
-                                         * Host fingerprints are not available, fail
-                                         * with a warning
-                                         */
-                                        break;
-                                    }
-                                }
-
-                                /*
-                                 * Host fingerprint matching failed. The fingerprint
-                                 * from the host did not match the registered
-                                 * entries.
-                                 */
-                                break;
-
-                            }else{
-                                /*
-                                 * Search for other known errors
-                                 */
-                                foreach($data as $line){
-                                    if($line === 'sudo: no tty present and no askpass program specified'){
-                                        throw new bException(tr('ssh_exec(): The SSH user ":user" does not have password-less sudo privileges on the host ":domain"', array(':domain' => $server['domain'], ':user' => $server['username'])), 'sudo');
-                                    }
-                                }
-                            }
-                        }
-                    }
+// :TODO:
+                    //$data = $e->getData();
+                    //
+                    //if(($function !== 'passthru') and $data){
+                    //    foreach($data as $line){
+                    //        /*
+                    //         * SSH key authentication failed
+                    //         */
+                    //        if($line === 'Host key verification failed.'){
+                    //            $e = new bException(tr('ssh_exec(): The host ":domain" SSH key fingerprint does not match any of the available finger prints in the ROOT/data/ssh/known_hosts file. This means somegbody is faking this server, or the server was reinstalled', array(':domain' => $server['domain'])), 'host-verification-failed');
+                    //            $not_check_inet = true;
+                    //
+                    //            foreach($data as $line){
+                    //                /*
+                    //                 * Did key authentication fail because of
+                    //                 * missing fingerprint or because it didn't
+                    //                 * match?
+                    //                 */
+                    //                if(preg_match('/No [a-z0-9-]+ host key is known for/i', $line)){
+                    //                    /*
+                    //                     * It's only missing, so we only have to
+                    //                     * add it
+                    //                     */
+                    //                    $e = new bException(tr('ssh_exec(): The host ":domain" has no SSH key fingerprint in the known_hosts file.', array(':domain' => $server['domain'])), 'warning/host-verification-missing');
+                    //
+                    //                    /*
+                    //                     * Is the server fingerprint perhaps already
+                    //                     * available in the `ssh_fingerprints`
+                    //                     * table? If so, we can rebuild the
+                    //                     * known_hosts file
+                    //                     */
+                    //                    ssh_host_is_known();
+                    //
+                    //                    $exists = sql_get('SELECT `id` FROM `ssh_fingerprints` WHERE `domain` = :domain AND `port` = :port LIMIT 1', true, array(':domain' => $server['domain'], ':port' => $server['port']));
+                    //
+                    //                    if($exists){
+                    //                        /*
+                    //                         * Hostname fingerprints are available
+                    //                         * in ssh_fingerprints. Rebuild the
+                    //                         * known_hosts file, and retry command
+                    //                         */
+                    //                        log_console(tr('The host ":domain" has no SSH key fingerprint in the ROOT/data/ssh/known_hosts file, but the keys were found in the ssh_fingerprints table. Rebuilding known_hosts file and retrying execution', array(':domain' => $server['domain'])), 'yellow');
+                    //                        ssh_rebuild_known_hosts();
+                    //                        return ssh_exec($server, $commands, $background, $function, $ok_exitcodes);
+                    //                    }
+                    //
+                    //                    /*
+                    //                     * Host fingerprints are not available, fail
+                    //                     * with a warning
+                    //                     */
+                    //                    break;
+                    //                }
+                    //            }
+                    //
+                    //            /*
+                    //             * Host fingerprint matching failed. The fingerprint
+                    //             * from the host did not match the registered
+                    //             * entries.
+                    //             */
+                    //            break;
+                    //
+                    //        }else{
+                    //            /*
+                    //             * Search for other known errors
+                    //             */
+                    //            foreach($data as $line){
+                    //                if($line === 'sudo: no tty present and no askpass program specified'){
+                    //                    throw new bException(tr('ssh_exec(): The SSH user ":user" does not have password-less sudo privileges on the host ":domain"', array(':domain' => $server['domain'], ':user' => $server['username'])), 'sudo');
+                    //                }
+                    //            }
+                    //        }
+                    //    }
+                    //}
 
                     /*
                      * Check if SSH can connect to the specified server / port
@@ -534,6 +543,7 @@ showdie($command);
                             $target_server  = $proxy['domain'];
                             $target_port    = $proxy['port'];
 
+// :TODO: WHy is ssh_add_known_host used here????
                             ssh_add_known_host($proxy['domain'], $proxy['port']);
                         }
 
@@ -940,9 +950,9 @@ function ssh_get_account($account){
  */
 function ssh_add_known_host($domain, $port){
     try{
-        $port   = ssh_get_port($port);
-        $retval = ssh_get_fingerprints($domain, $port);
-        $count  = 0;
+        $port         = ssh_get_port($port);
+        $fingerprints = ssh_get_fingerprints($domain, $port);
+        $count        = 0;
 
         if(empty($retval)){
             throw new bException(tr('ssh_add_known_host(): ssh-keyscan found no public keys for domain ":domain"', array(':domain' => $domain)), 'not-found');
@@ -959,23 +969,24 @@ function ssh_add_known_host($domain, $port){
         }
 
         /*
-         * Auto register the fingerprints in the ssh_fingerprints table
+         * Auto register the fingerprints in the ssh_fingerprints tableraid
          */
-        $fingerprints = sql_list('SELECT `fingerprint`, `algorithm` FROM `ssh_fingerprints` WHERE `domain` = :domain AND `port` = :port', array(':domain' => $domain, ':port' => $port));
-
-        if($fingerprints){
+        $dbfingerprints = sql_list(' SELECT `fingerprint`, `algorithm` FROM `ssh_fingerprints` WHERE `domain` = :domain AND `port` = :port', array(':domain' => $domain, ':port' => $port));
+show($dbfingerprints);
+showdie($fingerprints);
+        if($dbfingerprints){
             /*
              * This host is already registered in the ssh_fingerprints table. We
              * should be able to find all its fingerprints
              */
-            foreach($retval as $fingerprint){
-                $exists = array_key_exists($fingerprint['fingerprint'], $fingerprints);
+            foreach($fingerprints as $fingerprint){
+                $exists = array_key_exists($fingerprint['fingerprint'], $dbfingerprints);
 
                 if(!$exists){
                     throw new bException(tr('ssh_add_known_host(): The domain ":domain" gave fingerprint ":fingerprint", which does not match any of the already registered fingerprints', array(':domain' => $fingerprint['domain'], ':fingerprint' => $fingerprint['fingerprint'])), 'not-exist');
                 }
 
-                if($fingerprints[$fingerprint['fingerprint']] != $fingerprint['algorithm']){
+                if($dbfingerprints[$exists] != $fingerprint['algorithm']){
                     throw new bException(tr('ssh_add_known_host(): The domain ":domain" gave fingerprint ":fingerprint", which does match an already registered fingerprints, but for the wrong algorithm ":algorithm"', array(':domain' => $fingerprint['domain'], ':fingerprint' => $fingerprint['fingerprint'], ':algorithm' => $fingerprint['algorithm'])), 'not-match');
                 }
             }
@@ -1017,6 +1028,7 @@ function ssh_add_known_host($domain, $port){
             }
         }
 
+// :TODO: Don't just set status to null!! What if it was deleted?!
         sql_query('UPDATE `servers` SET `status` = NULL WHERE `domain` = :domain', array(':domain' => $domain));
         return $count;
 
@@ -1220,6 +1232,8 @@ function ssh_rebuild_known_hosts($clear = false){
             file_delete(ROOT.'data/ssh/known_hosts');
         }
 
+        log_console(tr('Rebuilding known_hosts file'), 'VERBOSE/cyan');
+
         $count        = 0;
         $fingerprints = sql_query('SELECT `id`, `domain`, `port`, `algorithm`, `fingerprint` FROM `ssh_fingerprints` WHERE `status` IS NULL');
 
@@ -1281,7 +1295,7 @@ function ssh_host_is_known($domain, $port, $auto_register = true){
          * Fingerprints are in the ssh_fingerprints table, but not in the
          * known_hosts file, and we can auto register
          */
-        log_console(tr('The host ":domain::port" has no SSH key fingerprint in the ROOT/data/ssh/known_hosts file, but the keys were found in the ssh_fingerprints table. Rebuilding known_hosts file', array(':domain' => $domain, ':port' => $port)), 'yellow');
+        log_console(tr('The host ":domain::port" has no SSH key fingerprint in the ROOT/data/ssh/known_hosts file, but the keys were found in the ssh_fingerprints table. Adding fingerprints now.', array(':domain' => $domain, ':port' => $port)), 'yellow');
         return ssh_add_known_host($domain, $port);
 
     }catch(Exception $e){
