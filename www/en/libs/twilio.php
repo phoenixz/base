@@ -104,7 +104,7 @@ function twilio_load($source, $auto_install = true){
             throw new bException(tr('twilio_load(): No Twilio account found for source ":source"', array(':source' => $source)), 'not-exist');
         }
 
-        return new Client($account['accounts_id'], $account['accounts_token']);
+        return new Client($account['account_id'], $account['accounts_token']);
 
     }catch(Exception $e){
         throw new bException('twilio_load(): Failed', $e);
@@ -266,19 +266,23 @@ function twilio_download_image($message_id, $url){
 /*
  *
  */
-function twilio_groups_validate($group){
+function twilio_validate_group($group){
     try{
         load_libs('validate');
 
         $v = new validate_form($group, 'name,description');
-        $v->isNotEmpty ($group['name']    , tr('No twilios name specified'));
-        $v->hasMinChars($group['name'],  2, tr('Please ensure the twilio name has at least 2 characters'));
+        $v->isNotEmpty($group['name'], tr('No twilios name specified'));
+        $v->hasMinChars($group['name'], 2, tr('Please ensure the twilio name has at least 2 characters'));
         $v->hasMaxChars($group['name'], 32, tr('Please ensure the twilio name has less than 32 characters'));
-        $v->isRegex    ($group['name'], '/^[a-z-]{2,32}$/', tr('Please ensure the twilio name contains only lower case letters, and dashes'));
+        $v->isRegex($group['name'], '/^[a-z-]{2,32}$/', tr('Please ensure the twilio name contains only lower case letters, and dashes'));
 
-        $v->isNotEmpty ($group['description']      , tr('No twilio description specified'));
-        $v->hasMinChars($group['description'],    2, tr('Please ensure the twilio description has at least 2 characters'));
-        $v->hasMaxChars($group['description'], 2047, tr('Please ensure the twilio description has less than 2047 characters'));
+        if($group['description']){
+            $v->hasMinChars($group['description'], 2, tr('Please ensure the twilio description has at least 2 characters'));
+            $v->hasMaxChars($group['description'], 2047, tr('Please ensure the twilio description has less than 2047 characters'));
+
+        }else{
+            $group['description'] = null;
+        }
 
         if(is_numeric(substr($group['name'], 0, 1))){
             $v->setError(tr('Please ensure that the name does not start with a number'));
@@ -303,7 +307,7 @@ function twilio_groups_validate($group){
         return $group;
 
     }catch(Exception $e){
-        throw new bException(tr('twilio_groups_validate(): Failed'), $e);
+        throw new bException(tr('twilio_validate_group(): Failed'), $e);
     }
 }
 
@@ -312,43 +316,39 @@ function twilio_groups_validate($group){
 /*
  * Returns twilio group from database
  */
-function twilio_groups_get($group){
+function twilio_get_group($group){
     try{
         if(!$group){
-            throw new bException(tr('twilio_groups_get(): No twilio specified'), 'not-specified');
+            throw new bException(tr('twilio_get_group(): No twilio specified'), 'not-specified');
         }
 
         if(!is_scalar($group)){
-            throw new bException(tr('twilio_groups_get(): Specified twilio ":group" is not scalar', array(':group' => $group)), 'invalid');
+            throw new bException(tr('twilio_get_group(): Specified twilio ":group" is not scalar', array(':group' => $group)), 'invalid');
         }
 
         $retval = sql_get('SELECT    `twilio_groups`.`id`,
-                                     `twilio_groups`.`name`,
+                                     `twilio_groups`.`meta_id`,
                                      `twilio_groups`.`status`,
+                                     `twilio_groups`.`name`,
                                      `twilio_groups`.`description`,
 
-                                     `createdby`.`name`   AS `createdby_name`,
-                                     `createdby`.`email`  AS `createdby_email`,
-                                     `modifiedby`.`name`  AS `modifiedby_name`,
-                                     `modifiedby`.`email` AS `modifiedby_email`
+                                     `createdby`.`name`  AS `createdby_name`,
+                                     `createdby`.`email` AS `createdby_email`
 
                            FROM      `twilio_groups`
 
                            LEFT JOIN `users` AS `createdby`
-                           ON        `twilio_groups`.`createdby`  = `createdby`.`id`
+                           ON        `twilio_groups`.`createdby` = `createdby`.`id`
 
-                           LEFT JOIN `users` AS `modifiedby`
-                           ON        `twilio_groups`.`modifiedby` = `modifiedby`.`id`
+                           WHERE     `twilio_groups`.`id`        = :twilio
+                           OR        `twilio_groups`.`name`      = :twilio',
 
-                           WHERE     `twilio_groups`.`id`         = :twilio
-                           OR        `twilio_groups`.`name`       = :twilio',
-
-                           array(':twilio' => $twilio));
+                           array(':twilio' => $group));
 
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('twilio_groups_get(): Failed', $e);
+        throw new bException('twilio_get_group(): Failed', $e);
     }
 }
 
@@ -357,22 +357,21 @@ function twilio_groups_get($group){
 /*
  *
  */
-function twilio_accounts_validate($account){
+function twilio_validate_account($account){
     try{
         load_libs('validate');
 
-        $v = new validate_form($account, 'email,accounts_id,accounts_token');
-        $v->isNotEmpty($account['email'], tr('No twilios name specified'));
-        $v->isEmail($account['email']   ,  2, tr('Please ensure the twilio name has at least 2 characters'));
+        $v = new validate_form($account, 'email,account_id,account_token');
+        $v->isNotEmpty($account['email'], tr('No twilio account email specified'));
+        $v->isEmail($account['email'], tr('Please ensure the twilio account email has at least 2 characters'));
 
-        $v->isNotEmpty($account['accounts_id']     , tr('No twilio account description specified'));
-        $v->hasMinChars($account['accounts_id'], 32, tr('Please ensure the twilio description has at least 2 characters'));
-        $v->hasMaxChars($account['accounts_id'], 40, tr('Please ensure the twilio description has less than 2047 characters'));
+        $v->isNotEmpty($account['account_id'], tr('No twilio account account id specified'));
+        $v->hasMinChars($account['account_id'], 32, tr('Please ensure the twilio account id has at least 32 characters'));
+        $v->hasMaxChars($account['account_id'], 40, tr('Please ensure the twilio account id has less than 40 characters'));
 
-        $v->isNotEmpty($account['accounts_token']     , tr('No Account token specified'));
-        $v->hasMinChars($account['accounts_token'], 32, tr('Please ensure the account\'s description has at least 2 characters'));
-        $v->hasMaxChars($account['accounts_token'], 40, tr('Please ensure the twilio description has less than 2047 characters'));
-
+        $v->isNotEmpty($account['account_token'], tr('No Account token specified'));
+        $v->hasMinChars($account['account_token'], 32, tr('Please ensure the account token has at least 2 characters'));
+        $v->hasMaxChars($account['account_token'], 40, tr('Please ensure the twilio token has less than 40 characters'));
 
         /*
          * Does the twilio already exist?
@@ -393,7 +392,7 @@ function twilio_accounts_validate($account){
         return $account;
 
     }catch(Exception $e){
-        throw new bException(tr('twilio_accounts_validate(): Failed'), $e);
+        throw new bException(tr('twilio_validate_account(): Failed'), $e);
     }
 }
 
@@ -402,44 +401,52 @@ function twilio_accounts_validate($account){
 /*
  *
  */
-function twilio_accounts_get($account){
+function twilio_get_account($account){
     try{
         if(!$account){
-            throw new bException(tr('twilio_accounts_get(): No twilio account specified'), 'not-specified');
+            throw new bException(tr('twilio_get_account(): No twilio account specified'), 'not-specified');
         }
 
         if(!is_scalar($account)){
-            throw new bException(tr('twilio_accounts_get(): Specified twilio account ":account" is not scalar', array(':account' => $right)), 'invalid');
+            throw new bException(tr('twilio_get_account(): Specified twilio account ":account" is not scalar', array(':account' => $right)), 'invalid');
+        }
+
+        if(is_numeric($account)){
+            $where   = ' WHERE `twilio_accounts`.`id` = :id ';
+            $execute = array(':id' => $account);
+
+        }elseif(filter_var($account, FILTER_VALIDATE_EMAIL)){
+            $where   = ' WHERE `twilio_accounts`.`email` = :email ';
+            $execute = array(':email' => $account);
+
+        }else{
+            $where   = ' WHERE `twilio_accounts`.`account_id` = :account_id ';
+            $execute = array(':account_id' => $account);
         }
 
         $retval = sql_get('SELECT    `twilio_accounts`.`id`,
-                                     `twilio_accounts`.`email`,
-                                     `twilio_accounts`.`accounts_id`,
-                                     `twilio_accounts`.`accounts_token`,
+                                     `twilio_accounts`.`meta_id`,
                                      `twilio_accounts`.`status`,
+                                     `twilio_accounts`.`email`,
+                                     `twilio_accounts`.`account_id`,
+                                     `twilio_accounts`.`account_token`,
 
-                                     `createdby`.`name`   AS `createdby_name`,
-                                     `createdby`.`email`  AS `createdby_email`,
-                                     `modifiedby`.`name`  AS `modifiedby_name`,
-                                     `modifiedby`.`email` AS `modifiedby_email`
+                                     `createdby`.`name`  AS `createdby_name`,
+                                     `createdby`.`email` AS `createdby_email`
 
                            FROM      `twilio_accounts`
 
                            LEFT JOIN `users` AS `createdby`
-                           ON        `twilio_accounts`.`createdby`  = `createdby`.`id`
+                           ON        `twilio_accounts`.`createdby` = `createdby`.`id`
 
-                           LEFT JOIN `users` AS `modifiedby`
-                           ON        `twilio_accounts`.`modifiedby` = `modifiedby`.`id`
+                           '.$where,
 
-                           WHERE     `twilio_accounts`.`id`    = :account
-                           OR        `twilio_accounts`.`email` = :account',
-
-                           array(':account' => $account));
+                           $execute);
 
         return $retval;
 
     }catch(Exception $e){
-        throw new bException('twilio_accounts_get(): Failed', $e);
+        throw new bException('twilio_get_account(): Failed', $e);
     }
 }
 
@@ -448,7 +455,7 @@ function twilio_accounts_get($account){
 /*
  *
  */
-function twilio_numbers_validate($number, $old_twilio = null){
+function twilio_validate_number($number, $old_twilio = null){
     try{
         load_libs('validate');
 
@@ -457,15 +464,15 @@ function twilio_numbers_validate($number, $old_twilio = null){
         }
 
         $v = new validate_form($number, 'email,accounts_id,account_token');
-        $v->isNotEmpty  ($number['name']    , tr('No name specified'));
-        $v->hasMinChars ($number['name'],  2, tr('Please ensure the number name has at least 2 characters'));
+        $v->isNotEmpty($number['name'], tr('No name specified'));
+        $v->hasMinChars($number['name'], 2, tr('Please ensure the number name has at least 2 characters'));
 
-        $v->isNotEmpty ($number['number']    , tr('No number description specified'));
+        $v->isNotEmpty($number['number'], tr('No number description specified'));
         $v->hasMinChars($number['number'], 12, tr('Please ensure the number has at least 12 digits'));
-        $v->isPhonenumber($number['number']  , tr('Please ensure the number is telphone number valid'));
+        $v->isPhonenumber($number['number'], tr('Please ensure the number is telphone number valid'));
 
         $v->isNotEmpty($number['accounts_id'], tr('No account specified'));
-        $v->isNumeric ($number['accounts_id'], tr('Invalid account specified'));
+        $v->isNumeric($number['accounts_id'], tr('Invalid account specified'));
 
         if($number['groups_id']){
             $v->isNumeric($number['groups_id'], tr('Invalid group specified'));
@@ -515,7 +522,7 @@ function twilio_numbers_validate($number, $old_twilio = null){
         return $number;
 
     }catch(Exception $e){
-        throw new bException(tr('twilio_numbers_validate(): Failed'), $e);
+        throw new bException(tr('twilio_validate_number(): Failed'), $e);
     }
 }
 
@@ -548,8 +555,8 @@ function twilio_get_number($number){
                                     `twilio_groups`.`name`  AS `group`,
 
                                     `twilio_accounts`.`email` AS `accounts_email`,
-                                    `twilio_accounts`.`accounts_id`,
-                                    `twilio_accounts`.`accounts_token`
+                                    `twilio_accounts`.`account_id`,
+                                    `twilio_accounts`.`account_token`
 
                            FROM     `twilio_numbers`
 
@@ -569,61 +576,6 @@ function twilio_get_number($number){
 
     }catch(Exception $e){
         throw new bException('twilio_get_number(): Failed', $e);
-    }
-}
-
-
-
-/*
- *
- */
-function twilio_get_account($source){
-    try{
-        if(!$source){
-            throw new bException(tr('twilio_get_account(): No source specified'), 'not-specified');
-        }
-
-        if(!is_scalar($source)){
-            throw new bException(tr('twilio_get_account(): Specified twilio source ":source" is not scalar', array(':source' => $source)), 'invalid');
-        }
-
-        if(filter_var($source, FILTER_VALIDATE_EMAIL)){
-            /*
-             * This is already an account email
-             */
-            $account = sql_get('SELECT `twilio_accounts`.`id`,
-                                       `twilio_accounts`.`email`,
-                                       `twilio_accounts`.`accounts_id`,
-                                       `twilio_accounts`.`accounts_token`
-
-                                FROM   `twilio_accounts`
-
-                                WHERE  `twilio_accounts`.`email`  = :email
-                                AND    `twilio_accounts`.`status` IS NULL',
-
-                                array(':email' => $source));
-
-        }else{
-            $account = sql_get('SELECT `twilio_accounts`.`id`,
-                                       `twilio_accounts`.`email`,
-                                       `twilio_accounts`.`accounts_id`,
-                                       `twilio_accounts`.`accounts_token`
-
-                                FROM   `twilio_numbers`
-
-                                JOIN   `twilio_accounts`
-                                ON     `twilio_accounts`.`id`     = `twilio_numbers`.`accounts_id`
-                                AND    `twilio_accounts`.`status` IS NULL
-
-                                WHERE  `twilio_numbers`.`number`  = :number',
-
-                                array(':number' => $source));
-        }
-
-        return $account;
-
-    }catch(Exception $e){
-        throw new bException('twilio_get_account(): Failed', $e);
     }
 }
 
@@ -767,7 +719,7 @@ function twilio_select_accounts($params){
         array_default($params, 'none' , tr('Select number'));
         array_default($params, 'empty', tr('No numbers available'));
 
-        $params['resource'] = sql_query('SELECT `accounts_id`, `email` FROM `twilio_accounts` WHERE `status` IS NULL ORDER BY `email`');
+        $params['resource'] = sql_query('SELECT `account_id`, `email` FROM `twilio_accounts` WHERE `status` IS NULL ORDER BY `email`');
 
         $html = html_select($params);
         return $html;
@@ -796,20 +748,6 @@ function twilio_select_number($params){
 
     }catch(Exception $e){
         throw new bException('twilio_select_number(): Failed', $e);
-    }
-}
-
-
-
-/*
- * OBSOLETE
- */
-function twilio_numbers_get($number){
-    try{
-        return twilio_get_number($number);
-
-    }catch(Exception $e){
-        throw new bException('twilio_numbers_get(): Failed', $e);
     }
 }
 ?>
