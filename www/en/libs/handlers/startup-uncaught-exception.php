@@ -2,6 +2,13 @@
 global $_CONFIG, $core;
 static $executed = false;
 
+/*
+ * If you are faced with an uncaught exception that does not give any
+ * information (for example, "exception before platform detection", or
+ * "pre ready exception"), uncomment the following line to see whats up. For
+ * security, Base will not display the entire exception as it doesn't know if it
+ * is on a production environment or not
+ */
 //echo "<pre>\n"; print_r($e->getCode()); echo"\n"; print_r($e); die();
 
 try{

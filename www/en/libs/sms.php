@@ -70,8 +70,8 @@ function sms_get_conversation($phone_local, $phone_remote, $type, $createdon = n
         /*
          * Determine the local and remote phones
          */
-        if(twilio_numbers_get($phone_remote)){
-            if(twilio_numbers_get($phone_local)){
+        if(twilio_get_number($phone_remote)){
+            if(twilio_get_number($phone_local)){
                 /*
                  * The remote number and local numbers are both locally known
                  * numbers. We can onlyh assume the order is correct, so don't

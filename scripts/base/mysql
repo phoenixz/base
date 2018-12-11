@@ -8,7 +8,8 @@ $usage = './scripts/base/mysql method [OPTIONS]
 ./scripts/base/mysql list databases [OPTIONS]
 ./scripts/base/mysql list tables [OPTIONS]
 ./scripts/base/mysql list foreign-keys [OPTIONS]
-./scripts/base/mysql change default-charset [OPTIONS]';
+./scripts/base/mysql change default-charset [OPTIONS]
+./scripts/base/mysql scan SERVER';
 
 $help  = 'This script contains various methods to assist with various mysql operations
 
@@ -24,6 +25,9 @@ list tables                      - List the available tables for the used
 
 list foreign-keys                - List the available foreign keys for the used
                                    connector and database
+
+scan SERVER                      - Register all databases from the specified
+                                   server
 
 
 
@@ -494,6 +498,17 @@ switch(cli_method()){
                 throw new bException(tr('Unknown sub method ":submethod" specified for the method ":method"', array(':method' => cli_method(), ':submethod' => cli_method(1))), 'unknown-method');
         }
 
+        break;
+
+    case 'scan':
+        $server = cli_argument();
+
+        cli_no_arguments_left();
+        load_libs('mysql,servers');
+
+        $count = mysql_register_databases($server);
+
+        log_console(tr('Added ":count" databases for server ":server"', array(':server' => $server['name'], ':count' => $count)), 'green');
         break;
 
     case '':

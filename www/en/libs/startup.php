@@ -68,6 +68,15 @@ define('PHP_MINIMUM_VERSION' , '5.5.9');
 
 
 /*
+ * DEBUG PARAMETERS
+ * Uncomment these parameters for special debugging needs
+ */
+//$_ENV['VERBOSE']     = true;
+//$_ENV['VERYVERBOSE'] = true;
+
+
+
+/*
  * This constant can be used to measure time used to render page or process
  * script
  */
