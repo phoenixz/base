@@ -142,36 +142,6 @@ include(ROOT.'libs/handlers/startup-manage-session.php');
 
 
 /*
- * New session? Perform basic checks
- */
-if(empty($_SESSION['init'])){
-    $_SESSION['init'] = time();
-    load_libs('detect');
-
-
-
-    /*
-     * Detect what client we are dealing with
-     */
-    detect_client();
-
-
-    /*
-     * Detect at what location client is
-     */
-    detect_location();
-
-
-
-    /*
-     * Detect what language client wants. Redirect if needed
-     */
-    detect_language();
-}
-
-
-
-/*
  * Set timezone
  * See http://www.php.net/manual/en/timezones.php for more info
  */
