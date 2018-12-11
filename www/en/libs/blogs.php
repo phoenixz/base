@@ -2864,9 +2864,8 @@ function blogs_sync_location($posts_id, $to_user = false){
             user_update_location($geo);
 
         }else{
-            $post            = blogs_post_get($posts_id);
-            $geo             = user_get_location($post['assigned_to_id']);
-            $geo['users_id'] = $post['assigned_to_id'];
+            $post = blogs_post_get($posts_id);
+            $geo  = user_get_location($post['assigned_to_id']);
             blog_update_location($geo);
         }
 
