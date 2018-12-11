@@ -2836,4 +2836,171 @@ function blogs_post_get_img($photo, $params, $tabindex){
                                     </tr>';
         return $html;
 }
+
+
+
+/*
+ * Sync location information from the specified posts_id to the user that is
+ * assigned to that post, or vice versa (depending on the $to_user variable)
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package blogs
+ * @see blogs_update_location()
+ * @see blogs_get_location()
+ * @see blogs_post_get()
+ *
+ * @param natural $posts_id
+ * @param boolean $to_user If set to true, the location information will be synced from the blog post key / value store to the user. If set to false, the location information will be taken from the user and synced to the blog post key / value store
+ * @return void
+ */
+function blogs_sync_location($posts_id, $to_user = false){
+    try{
+        if($to_user){
+            $geo             = blogs_get_location($posts_id);
+            $geo['users_id'] = $geo['assigned_to_id'];
+            user_update_location($geo);
+
+        }else{
+            $post            = blogs_post_get($posts_id);
+            $geo             = user_get_location($post['assigned_to_id']);
+            $geo['users_id'] = $post['assigned_to_id'];
+            blog_update_location($geo);
+        }
+
+    }catch(Exception $e){
+        throw new bException(tr('blogs_sync_location(): failed'), $e);
+    }
+}
+
+
+
+/*
+ * Get and return location information for the specified blogs posts_id, if exist
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package blogs
+ * @see blogs_update_location()
+ *
+ * @param natural $posts_id
+ * @return array the found location information
+ */
+function blogs_get_location($posts_id){
+    try{
+        $values = blogs_post_get_key_values($posts_id);
+
+        /*
+         * Return only location keys
+         */
+        foreach($values as $key => $value){
+            switch($key){
+                case 'accuracy':
+                    // FALLTHROUGH
+                case 'latitude':
+                    // FALLTHROUGH
+                case 'longitude':
+                    // FALLTHROUGH
+                case 'offset_latitude':
+                    // FALLTHROUGH
+                case 'offset_longitude':
+                    // FALLTHROUGH
+                case 'cities_id':
+                    // FALLTHROUGH
+                case 'states_id':
+                    // FALLTHROUGH
+                case 'countries_id':
+                    // FALLTHROUGH
+                    break;
+
+                default:
+                    unset($values[$key]);
+            }
+        }
+
+        return $values;
+
+    }catch(Exception $e){
+        throw new bException(tr('blogs_get_location(): failed'), $e);
+    }
+}
+
+
+
+/*
+ * Get and return location information for the specified blogs posts_id, if exist
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package blogs
+ * @see blogs_get_location()
+ *
+ * @param natural $posts_id
+ * @param params $geo
+ * @param integer $geo[accuracy]
+ * @param float $geo[latitude]
+ * @param float $geo[longitude]
+ * @param float $geo[offset_latitude]
+ * @param float $geo[offset_longitude]
+ * @param integer $geo[cities_id]
+ * @param integer $geo[states_id]
+ * @param integer $geo[countries_id]
+ * @return integer The amount of updated entries
+ */
+function blogs_update_location($posts_id, $geo){
+    try{
+        $count  = 0;
+        $insert = sql_prepare('INSERT INTO `blogs_key_values` (`blogs_posts_id`, `key`. `seokey`, `value`, `seovalue`)
+                               VALUES                         (:blogs_posts_id , :key . :seokey , :value , :seovalue )
+
+                               ON UPDATE SET `key`      = :update_key,
+                                             `seokey`   = :update_seokey,
+                                             `value`    = :update_value,
+                                             `seovalue` = :update_seovalue');
+
+        foreach($geo as $key => $value){
+            switch($key){
+                case 'accuracy':
+                    // FALLTHROUGH
+                case 'latitude':
+                    // FALLTHROUGH
+                case 'longitude':
+                    // FALLTHROUGH
+                case 'offset_latitude':
+                    // FALLTHROUGH
+                case 'offset_longitude':
+                    // FALLTHROUGH
+                case 'cities_id':
+                    // FALLTHROUGH
+                case 'states_id':
+                    // FALLTHROUGH
+                case 'countries_id':
+                    // FALLTHROUGH
+                    $count++;
+
+                    $insert->execute(array(':blogs_posts_id'  => $posts_id,
+                                           ':key'             => $key,
+                                           ':seokey'          => seo_string($key),
+                                           ':value'           => $value,
+                                           ':seovalue'        => seo_string($value),
+                                           ':update_key'      => $key,
+                                           ':update_seokey'   => seo_string($key),
+                                           ':update_value'    => $value,
+                                           ':update_seovalue' => seo_string($value)));
+                    break;
+            }
+        }
+
+        return $count;
+
+    }catch(Exception $e){
+        throw new bException(tr('blogs_update_location(): failed'), $e);
+    }
+}
 ?>
