@@ -2374,6 +2374,138 @@ function user_update_reference_codes($user, $allow_duplicate_reference_codes = n
 
 
 /*
+ * Update the location information for the specified user from the specified
+ * latitude / longitude, or (if specified) the geo data
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package user
+ *
+ * @param params $user
+ * @param integer $user[id]
+ * @param integer $user[users_id]
+ * @param float $user[longitude]
+ * @param float $user[latitude]
+ * @param integer $user[cities_id]
+ * @param integer $user[states_id]
+ * @param integer $user[countries_id]
+ * @return
+ */
+function user_update_location($user){
+    global $_CONFIG;
+
+    try{
+        /*
+         * Validate data
+         */
+        array_ensure($user, 'id,users_id,latitude,longitude,accuracy,cities_id,states_id,countries_id');
+
+        if($user['users_id']){
+            $user['id'] = $user['users_id'];
+        }
+
+        if(!$user['id']){
+            throw new bException(tr('user_update_location(): No users id or users_id specified'), 'not-specified');
+        }
+
+        $geo     = geo_validate($user);
+        $execute = array(':id' => $user['id']);
+
+        /*
+         * Set automated location offset?
+         */
+        if(!$_CONFIG['user']['location']['max_offset']){
+            if($_CONFIG['user']['location']['max_offset'] === 0){
+                /*
+                 * Location offset system has no offset
+                 */
+                $execute[':offset_latitude']  = $user['latitude'];
+                $execute[':offset_longitude'] = $user['longitude'];
+
+            }else{
+                /*
+                 * Disable location offset system
+                 */
+                $execute[':offset_latitude']  = null;
+                $execute[':offset_longitude'] = null;
+            }
+
+        }else{
+            /*
+             * Automatically generate a random offset
+             */
+            if(!is_natural($_CONFIG['user']['location']['max_offset'], 0)){
+                throw new bException(tr('user_update_location(): Configured max offset ":max_offset" is invalid', array(':max_offset' => $_CONFIG['user']['location']['max_offset'])), 'invalid');
+            }
+
+            if($_CONFIG['user']['location']['max_offset'] > 10000){
+                notify(tr('user_update_location(): Configured max offset ":max_offset" is very high! this may lead to problems!', array(':max_offset' => $_CONFIG['user']['location']['max_offset'])));
+            }
+
+// :TODO: Implement random offset
+            $execute[':offset_latitude']  = $user['latitude'];
+            $execute[':offset_longitude'] = $user['longitude'];
+        }
+
+        /*
+         * Detect city / state / country information
+         *
+         * NOTE: The detection will be done on the latitude / longitude
+         * information, NOT the offset pairs! This is because though we do want
+         * to have an offset to hide the exact location, we do not want to have
+         * the user appear in the completely wrong city!
+         */
+        if($_CONFIG['user']['location']['detect']){
+            if(!$user['cities_id'] or !$user['states_id'] or !$user['countries_id']){
+                if(!geo_loaded()){
+                    throw new bException(tr('user_update_location(): Failed to auto detect city, state, and country because the geo database has not yet been loaded'), 'not-available');
+                }
+
+                $city = geo_get_city_from_location($geo);
+
+                $execute[':cities_id']    = $city['id'];
+                $execute[':states_id']    = $city['states_id'];
+                $execute[':countries_id'] = $city['countries_id'];
+            }
+
+        }else{
+            /*
+             * Do not detect city / state / country, rely on what has been specified
+             */
+            $execute[':cities_id']    = $geo['id'];
+            $execute[':states_id']    = $geo['states_id'];
+            $execute[':countries_id'] = $geo['countries_id'];
+        }
+
+        /*
+         * Update all user's location information
+         */
+        sql_query('UPDATE `users`
+
+                   SET    `accuracy`         = :accuracy,
+                          `latitude`         = :latitude,
+                          `longitude`        = :longitude,
+                          `offset_latitude`  = :offset_latitude,
+                          `offset_longitude` = :offset_longitude,
+                          `cities_id`        = :cities_id,
+                          `states_id`        = :states_id,
+                          `countries_id`     = :countries_id
+
+                   WHERE  `id`               = :id',
+
+                   $execute);
+
+
+    }catch(Exception $e){
+        throw new bException(tr('user_update_location(): Failed'), $e);
+    }
+}
+
+
+
+/*
  * OBSOLETE WRAPPERS BELOW
  */
 function users_validate($user, $sections = array()){
