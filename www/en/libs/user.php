@@ -2411,6 +2411,7 @@ function user_update_location($user){
         }
 
         $geo     = geo_validate($user);
+
         $execute = array(':id' => $user['id']);
 
         /*
@@ -2463,7 +2464,7 @@ function user_update_location($user){
                     throw new bException(tr('user_update_location(): Failed to auto detect city, state, and country because the geo database has not yet been loaded'), 'not-available');
                 }
 
-                $city = geo_get_city_from_location($geo);
+                $city = geo_get_city_from_location($geo['latitude'], $geo['longitude']);
 
                 $execute[':cities_id']    = $city['id'];
                 $execute[':states_id']    = $city['states_id'];
@@ -2478,6 +2479,9 @@ function user_update_location($user){
             $execute[':states_id']    = $geo['states_id'];
             $execute[':countries_id'] = $geo['countries_id'];
         }
+        $execute[':latitude']  = $user['latitude'];
+        $execute[':longitude'] = $user['longitude'];
+        $execute[':accuracy']  = $user['accuracy'];
 
         /*
          * Update all user's location information
