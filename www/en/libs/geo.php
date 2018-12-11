@@ -914,7 +914,7 @@ function geo_validate($geo){
             $geo = $geo['coords'];
         }
 
-        $v = new validate_form($geo, 'latitude,longitude,accuracy');
+        $v = new validate_form($geo, 'latitude,longitude,zoom,accuracy,cities_id,states_id,countries_id');
 
         $v->isNumeric($geo['longitude'], tr('Invalid longitude ":longitude" specified', array(':longitude' => $geo['longitude'])));
         $v->isBetween($geo['longitude'], -180, 180, tr('Invalid longitude ":longitude" specified', array(':longitude' => $geo['longitude'])));
@@ -922,12 +922,83 @@ function geo_validate($geo){
         $v->isNumeric($geo['latitude'], tr('Invalid latitude ":latitude" specified', array(':latitude' => $geo['latitude'])));
         $v->isBetween($geo['longitude'], -90, 90, tr('Invalid latitude ":latitude" specified', array(':latitude' => $geo['latitude'])));
 
+        /*
+         * Validate zoom
+         */
+        if($geo['zoom']){
+            $v->isNumeric($geo['zoom'], tr('Invalid zoom ":zoom" specified', array(':zoom' => $geo['zoom'])));
+            $v->isBetween($geo['zoom'], 1, 20, tr('Invalid zoom":zoom" specified', array(':zoom' => $geo['zoom'])));
+
+        }else{
+            $geo['zoom'] = null;
+        }
+
+        /*
+         * Validate accuracy
+         */
         if($geo['accuracy']){
             $v->isNumeric($geo['accuracy'], tr('Invalid accuracy ":accuracy" specified', array(':accuracy' => $geo['accuracy'])));
             $v->isBetween($geo['accuracy'], 0, 100000, tr('Invalid accuracy ":accuracy" specified', array(':accuracy' => $geo['accuracy'])));
 
         }else{
             $geo['accuracy'] = null;
+        }
+
+        $v->isValid();
+
+        /*
+         * Validate the countries_id
+         */
+        if($geo['countries_id']){
+            $exist = sql_query('SELECT `id` FROM `geo_countries` WHERE `id` = :id AND `status` IS NULL', array(':id' => $geo['countries_id']));
+
+            if(!$exist){
+                $v->setError(tr('The countries_id ":id" does not exist', array(':id' => $geo['countries_id'])));
+            }
+
+            $v->isValid();
+
+        }else{
+            $geo['countries_id'] = null;
+        }
+
+        /*
+         * Validate the states_id
+         */
+        if($geo['states_id']){
+            $exist = sql_query('SELECT `id` FROM `geo_states` WHERE `id` = :id AND `status` IS NULL', array(':id' => $geo['states_id']));
+
+            if(!$exist){
+                $v->setError(tr('The specified states_id ":id" does not exist', array(':id' => $geo['states_id'])));
+
+            }elseif($exist['countries_id'] !== $geo['countries_id']){
+                $v->setError(tr('The specified states_id ":id" does not exist in the specified countries_id ":countries_id"', array(':id' => $geo['states_id'], ':countries_id' => $geo['countries_id'])));
+            }
+
+            $v->isValid();
+
+        }else{
+            $geo['states_id'] = null;
+        }
+
+        /*
+         * Validate the cities_id
+         */
+        if($geo['cities_id']){
+            $exist = sql_query('SELECT `id` FROM `geo_cities` WHERE `id` = :id AND `status` IS NULL', array(':id' => $geo['cities_id']));
+
+            if(!$exist){
+                $v->setError(tr('The cities_id ":id" does not exist', array(':id' => $geo['cities_id'])));
+
+            }elseif($exist['countries_id'] !== $geo['countries_id']){
+                $v->setError(tr('The specified cities_id ":id" does not exist in the specified countries_id ":countries_id"', array(':id' => $geo['states_id'], ':countries_id' => $geo['countries_id'])));
+
+            }elseif($exist['states_id'] !== $geo['states_id']){
+                $v->setError(tr('The specified cities_id ":id" does not exist in the specified states_id ":states_id"', array(':id' => $geo['states_id'], ':states_id' => $geo['states_id'])));
+            }
+
+        }else{
+            $geo['cities_id'] = null;
         }
 
         $v->isValid();
@@ -983,6 +1054,29 @@ function geo_set_session($geo, $expand_location = true){
 
     }catch(bException $e){
         throw new bException('geo_set_session() Failed', $e);
+    }
+}
+
+
+
+/*
+ * Returns true or false to indicate if the geo database has been loaded
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geo
+ *
+ * @return boolean true if the geo database has been loaded
+ */
+function geo_loaded(){
+    try{
+        $count = sql_get('SELECT COUNT(`id`) AS `count` FROM `geo_cities`', true);
+        return (boolean) $count;
+
+    }catch(bException $e){
+        throw new bException('geo_loaded() Failed', $e);
     }
 }
 
