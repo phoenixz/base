@@ -2646,6 +2646,25 @@ function under_construction($functionality = ''){
 
 
 /*
+ * Throw an "obsolete" exception
+ */
+function obsolete($functionality = ''){
+    notify(array('title'   => tr('Obsolete function used'),
+                 'message' => tr('Function ":function" is used in ":file@:@line" in project ":project"', array(':function' => current_function(),
+                                                                                                               ':file'     => current_file(),
+                                                                                                               ':line'     => current_line(),
+                                                                                                               ':project'  => PROJECT))));
+
+    if($functionality){
+        throw new bException(tr('The functionality ":f" is obsolete!', array(':f' => $functionality)), 'obsolete');
+    }
+
+    throw new bException(tr('This function is obsolete!'), 'obsolete');
+}
+
+
+
+/*
  * Throw an "not-supported" exception
  */
 function not_supported($functionality = ''){
