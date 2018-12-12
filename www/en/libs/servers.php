@@ -54,7 +54,7 @@ function servers_validate($server, $structure_only = false, $password_strength =
     global $_CONFIG;
 
     try{
-        load_libs('validate,file,seo,customers,providers');
+        load_libs('validate,seo,customers,providers');
 
         $v = new validate_form($server, 'id,ipv4,ipv6,port,domain,domains,seoprovider,seocustomer,ssh_account,description,ssh_proxy,database_accounts_id,bill_duedate,cost,interval,allow_sshd_modification,register');
 
