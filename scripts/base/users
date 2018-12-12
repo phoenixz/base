@@ -225,7 +225,9 @@ erase USERS[_ID]                - Erase specified users. USERS is a space
 
 
 whoami                          - Displays what user the current shell user is
-                                  registered as';
+                                  registered as
+
+timezones                       - List the available timezones';
 
 require_once(__DIR__.'/../../libs/startup.php');
 
@@ -1076,6 +1078,15 @@ switch(cli_method()){
 
         }else{
             log_console($_SESSION['user']['id'].' '.$_SESSION['user']['email'].' '.$_SESSION['user']['username'].' '.$_SESSION['user']['name']);
+        }
+
+        break;
+
+    case 'timezones':
+        load_libs('date');
+
+        foreach(date_timezones_list() as $timezone){
+            log_console($timezone);
         }
 
         break;
