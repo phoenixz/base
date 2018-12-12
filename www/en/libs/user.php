@@ -10,6 +10,28 @@
 
 
 
+/*
+ * Initialize the library. Automatically executed by libs_load(). Will automatically load the ssh library configuration
+ *
+ * @auhthor Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package user
+ *
+ * @return void
+ */
+function user_library_init(){
+    try{
+        load_config('user');
+
+    }catch(Exception $e){
+        throw new bException('user_library_init(): Failed', $e);
+    }
+}
+
+
+
  /*
   * Get user data with MC write through cache
   */
@@ -2411,7 +2433,6 @@ function user_update_location($user){
         }
 
         $geo     = geo_validate($user);
-
         $execute = array(':id' => $user['id']);
 
         /*
@@ -2479,6 +2500,7 @@ function user_update_location($user){
             $execute[':states_id']    = $geo['states_id'];
             $execute[':countries_id'] = $geo['countries_id'];
         }
+
         $execute[':latitude']  = $user['latitude'];
         $execute[':longitude'] = $user['longitude'];
         $execute[':accuracy']  = $user['accuracy'];
@@ -2500,7 +2522,6 @@ function user_update_location($user){
                    WHERE  `id`               = :id',
 
                    $execute);
-
 
     }catch(Exception $e){
         throw new bException(tr('user_update_location(): Failed'), $e);
