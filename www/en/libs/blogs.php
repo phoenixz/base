@@ -2857,10 +2857,11 @@ function blogs_post_get_img($photo, $params, $tabindex){
  * @return void
  */
 function blogs_sync_location($posts_id, $to_user = false){
+    load_libs('user');
     try{
         if($to_user){
             $geo             = blogs_get_location($posts_id);
-            $geo['users_id'] = $geo['assigned_to_id'];
+            $geo['users_id'] = $posts_id;
             user_update_location($geo);
 
         }else{

@@ -2422,7 +2422,7 @@ function user_update_reference_codes($user, $allow_duplicate_reference_codes = n
  */
 function user_update_location($user){
     global $_CONFIG;
-
+    load_libs('geo');
     try{
         /*
          * Validate data
@@ -2436,7 +2436,6 @@ function user_update_location($user){
         if(!$user['id']){
             throw new bException(tr('user_update_location(): No users id or users_id specified'), 'not-specified');
         }
-
         $geo     = geo_validate($user);
         $execute = array(':id' => $user['id']);
 
