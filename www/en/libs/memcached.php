@@ -88,7 +88,7 @@ function mc_connect(){
                      * Send error notification
                      */
                     notify('nomemcachedserver', 'Failed to connect to all ('.count($_CONFIG['memcached']['servers']).') configured memcached servers');
-                    throw new bException(tr('Failed to connect to all "%count%" configured memcached servers', array('%count%' => count($_CONFIG['memcached']['servers']))), 'memcachedconnectfail');
+                    throw new bException(tr('Failed to connect to all ":count" configured memcached servers', array(':count' => count($_CONFIG['memcached']['servers']))), 'memcachedconnectfail');
                 }
             }
         }
