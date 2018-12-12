@@ -24,7 +24,7 @@ sql_foreignkey_exists('users', 'fk_users_countries_id', '!ALTER TABLE `users` AD
 sql_foreignkey_exists('users', 'fk_users_countries', 'ALTER TABLE `users` DROP FOREIGN KEY `fk_users_countries`');
 
 $users = sql_query('SELECT `id`, `latitude`, `longitude` FROM `users` WHERE `latitude` IS NOT NULL OR `longitude` IS NOT NULL');
-log_console('Updating location for ":count" users', array(':count' => $users->rowCount()));
+log_console(tr('Updating location for ":count" users', array(':count' => $users->rowCount())));
 
 while($user = sql_fetch($users)){
     /*
