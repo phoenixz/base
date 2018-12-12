@@ -26,6 +26,8 @@
  * @return void
  */
 function detect(){
+    global $core;
+
     try{
         /*
          * Detect what client we are dealing with
@@ -38,10 +40,10 @@ function detect(){
         $location = detect_location();
         $language = detect_language();
 
-        $core->register(array('session' => array('client'   => $client,
-                                                 'mobile'   => $mobile,
-                                                 'location' => $location,
-                                                 'language' => $language)));
+        $core->register('session', array('client'   => $client,
+                                         'mobile'   => $mobile,
+                                         'location' => $location,
+                                         'language' => $language));
 
     }catch(Exception $e){
         throw new bException('detect(): Failed', $e);
