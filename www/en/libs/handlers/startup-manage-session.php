@@ -45,6 +45,7 @@ if(empty($_COOKIE['base'])){
 }
 
 
+
 /*
  * Set session and cookie parameters
  */
@@ -88,6 +89,7 @@ try{
                 session_set_save_handler('sessions_mm_open', 'sessions_mm_close', 'sessions_mm_read', 'sessions_mm_write', 'sessions_mm_destroy', 'sessions_mm_gc', 'sessions_mm_create_sid');
                 register_shutdown_function('session_write_close');
         }
+
 
 
         /*
@@ -222,6 +224,12 @@ try{
                 }
             }
 
+            if(empty($_SESSION['init'])){
+                load_libs('detect');
+                detect();
+            }
+
+
             if($_CONFIG['sessions']['regenerate_id']){
                 if(isset($_SESSION['created']) and (time() - $_SESSION['created'] > $_CONFIG['sessions']['regenerate_id'])){
                     /*
@@ -312,9 +320,13 @@ try{
              * Initialize the session
              */
             $_SESSION['init']     = time();
+            $_SESSION['first']    = true;
             $_SESSION['client']   = $core->register['session']['client'];
             $_SESSION['location'] = $core->register['session']['location'];
             $_SESSION['language'] = $core->register['session']['language'];
+
+        }else{
+            unset($_SESSION['first']);
         }
     }
 

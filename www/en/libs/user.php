@@ -1021,6 +1021,7 @@ function user_signout() {
         unset($_SESSION['user']);
 
         session_destroy();
+        setcookie('base', 'stub', 1, '/');
 
         if($cookie){
             file_delete(ROOT.'data/cookies/sess_'.$cookie);
