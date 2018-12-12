@@ -105,9 +105,7 @@ function date_timezones_select($params = null){
  */
 function date_timezones_exists($timezone){
     try{
-        return in_array(strtolower($timezone), date_timezones_list());
-// :DELETE: Remove MySQL requirement because production users will not have access to "mysql" database
-//        return sql_get('SELECT `Time_zone_id` FROM `mysql`.`time_zone_name` WHERE LCASE(`Name`) = :Name', array(':Name' => 'posix/'.strtolower($timezone)));
+        return isset_get(date_timezones_list()[strtolower($timezone)]);
 
     }catch(Exception $e){
         throw new bException(tr('date_timezones_exists(): Failed'), $e);
