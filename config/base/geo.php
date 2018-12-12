@@ -18,6 +18,6 @@ $_CONFIG['geo'] = array('lookup' => 'geonames',
                                                                  'fail'    => '/ajax/geo/detect/fail.php')),
 
                         'cities' => array('filter_type' => ' OR ',
-                                          'filters'     => array('min_population' => 200000,
+                                          'filters'     => array('min_population' => 50000,
                                                                  'feature_code'   => 'PPLA,PPLA2')));
 ?>
