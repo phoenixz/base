@@ -1081,6 +1081,32 @@ function geo_loaded(){
 }
 
 
+/*
+ * Calculate distance of two points
+ *
+ * @author Sven Olaf Oostenbrink <sven@capmega.com>
+ * @copyright Copyright (c) 2018 Capmega
+ * @license http://opensource.org/licenses/GPL-2.0 GNU Public License, Version 2
+ * @category Function reference
+ * @package geo
+ *
+ * @return float with distance in meters
+ */
+function geo_distance(float $latA, float $lonA, float $latB, float $lonB){
+    $RlatA = deg2rad($latA);
+    $RlonA = deg2rad($lonA);
+    $RlatB = deg2rad($latB);
+    $RlonB = deg2rad($lonB);
+
+    $deltaLat = $RlatA - $RlatB;
+    $deltaLon = $RlonA - $RlonB;
+
+    $d = sin($deltaLat/2) * sin($deltaLat/2) + cos($RlatA) * cos($RlatB) * sin($deltaLon/2) * sin($deltaLon/2);
+
+    return 2 * ASIN(SQRT($d)) * 6371.01;
+}
+
+
 
 /*
  * OBSOLETE FUNCTIONS
