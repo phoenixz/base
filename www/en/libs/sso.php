@@ -29,6 +29,8 @@ function sso_library_init(){
                                'checks'    => array(ROOT.'libs/external/hybridauth/Hybrid/Auth.php',
                                                     ROOT.'libs/external/hybridauth/Hybrid/Auth.php')));
 
+        load_config('sso');
+
     }catch(Exception $e){
         throw new bException(tr('sso_library_init(): Failed'), $e);
     }
@@ -316,6 +318,9 @@ function sso_config($provider){
         $path = ROOT.'data/cache/sso/'.ENVIRONMENT.'/';
         $file = $path.$provider.'.php';
 
+        /*
+         * Check if a cached config file exists.
+         */
         if(file_exists($file) and ($_CONFIG['sso']['cache_config'] and ((time() - filemtime($file)) > $_CONFIG['sso']['cache_config']))){
             chmod($path, 0700);
             chmod($file, 0660);

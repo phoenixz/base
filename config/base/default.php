@@ -367,25 +367,6 @@ $_CONFIG['social']             = array('links'                              => a
                                                                                      'youtube'        => '',                                //
                                                                                      'target'         => '_blank'));                        //
 
-// SSO configuration
-$_CONFIG['sso']                = array('cache_config'                       => 86400,
-
-                                       'facebook'                           => false,                                                       //
-
-                                       'google'                             => false,                                                       //
-
-                                       'linkedin'                           => false,                                                       //
-
-                                       'microsoft'                          => false,                                                       //
-
-                                       'paypal'                             => false,                                                       //
-
-                                       'reddit'                             => false,                                                       //
-
-                                       'twitter'                            => false,                                                       //
-
-                                       'yandex'                             => false);                                                      //
-
 // Sync configuration.
 $_CONFIG['sync']               = array();                                                                                                   //
 
