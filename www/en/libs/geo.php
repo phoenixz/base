@@ -971,7 +971,7 @@ function geo_validate($geo){
             if(!$exist){
                 $v->setError(tr('The specified states_id ":id" does not exist', array(':id' => $geo['states_id'])));
 
-            }elseif($exist['countries_id'] !== $geo['countries_id']){
+            }elseif($exist['id'] !== $geo['states_id']){
                 $v->setError(tr('The specified states_id ":id" does not exist in the specified countries_id ":countries_id"', array(':id' => $geo['states_id'], ':countries_id' => $geo['countries_id'])));
             }
 
