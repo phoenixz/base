@@ -316,15 +316,11 @@ function coupons_get($coupon, $column = null, $status = null, $categories_id = f
                                          `coupons`.`code`,
                                          `coupons`.`seocode`,
                                          `coupons`.`reward`,
-                                         `coupons`.`description`,
-
-                                         `parents`.`name`    AS `parent`,
-                                         `parents`.`seoname` AS `seoparent`
+                                         `coupons`.`description`
 
                                FROM      `coupons`
 
-                               LEFT JOIN `coupons` AS `parents`
-                               ON        `parents`.`id` = `coupons`.`parents_id` '.$where, $execute);
+'.$where, $execute);
         }
 
         return $retval;
