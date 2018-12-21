@@ -16,6 +16,8 @@ sql_query('CREATE TABLE `coupons` (`id`            INT(11)       NOT NULL AUTO_I
                                    `code`          VARCHAR(16)   NOT NULL,
                                    `seocode`       VARCHAR(16)   NOT NULL,
                                    `reward`        VARCHAR(8)    NOT NULL,
+                                   `count`         INT(11)           NULL DEFAULT NULL,
+                                   `expired`       DATETIME          NULL DEFAULT NULL,
                                    `description`   VARCHAR(2040) NOT NULL,
 
                                           KEY `createdon`     (`createdon`),

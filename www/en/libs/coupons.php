@@ -78,33 +78,33 @@ function coupons_validate($coupon){
         /*
          * Validate the code
          */
-        $v->notEmpty($coupon['code'], tr('Please specify a coupon code'));
-        $v->isRegex($coupon['code'], '/[a-z0-9-]{2-16}/i',  tr('Please specify a valid coupon code: minimum 2 characters, maximum 16 characters, only a-z, A-Z, 0-9 and -'));
+        $v->isNotEmpty($coupon['code'], tr('Please specify a coupon code'));
+        $v->isRegex($coupon['code'], '/[a-z0-9-]{2,16}/i',  tr('Please specify a valid coupon code: minimum 2 characters, maximum 16 characters, only a-z, A-Z, 0-9 and -'));
 
         /*
          * Validate the reward
          */
-        $v->notEmpty($coupon['reward'], tr('Please specify a reward'));
-        $v->isRegex($coupon['reward'], '/[0-9-]{1-8}%?/',  tr('Please specify a valid reward: minimum 1 number, maximum 8 numbers, may end in %'));
+        $v->isNotEmpty($coupon['reward'], tr('Please specify a reward'));
+        $v->isRegex($coupon['reward'], '/[0-9-]{1,8}%?/',  tr('Please specify a valid reward: minimum 1 number, maximum 8 numbers, may end in %'));
 
         /*
          * Validate the description
          */
-        if($server['description']){
-            $v->hasMinChars($server['description'],   16, tr('Please specifiy a minimum of 16 characters for the description'));
-            $v->hasMaxChars($server['description'], 2047, tr('Please specifiy a maximum of 2047 characters for the description'));
+        if($coupon['description']){
+            $v->hasMinChars($coupon['description'],   16, tr('Please specifiy a minimum of 16 characters for the description'));
+            $v->hasMaxChars($coupon['description'], 2047, tr('Please specifiy a maximum of 2047 characters for the description'));
 
-            $server['description'] = cfm($server['description']);
+            $coupon['description'] = cfm($coupon['description']);
 
         }else{
-            $server['description'] = '';
+            $coupon['description'] = '';
         }
 
         /*
          * Validate the category
          */
-        if($coupon['category']){
-            $exist = categories_get($coupon['category'], 'id');
+        if($coupon['categories_id']){
+            $exist = sql_get('SELECT `id` FROM list_categories WHERE `id` = :id', array('id' => $coupon['categories_id']));
 
             if(!$exist){
                 $v->setError(tr('The category ":category" does not exist', array(':category' => $coupon['category'])));
@@ -163,15 +163,17 @@ function coupons_insert($coupon){
     try{
         $coupon = coupons_validate($coupon);
 
-        sql_query('INSERT INTO `coupons` (`createdby`, `meta_id`, `categories_id`, `coupon`, `seocoupon`, `reward`, `description`)
-                   VALUES                (:createdby , :meta_id , :categories_id , :coupon , :seocoupon , :reward , :description )',
+        sql_query('INSERT INTO `coupons` (`createdby`, `meta_id`, `categories_id`, `code`, `seocode`, `reward`, `description`, `count`, `expired`)
+                   VALUES                (:createdby , :meta_id , :categories_id , :code , :seocode , :reward , :description , :count , :expired)',
 
                    array(':createdby'     => isset_get($_SESSION['user']['id']),
                          ':meta_id'       => meta_action(),
                          ':categories_id' => $coupon['categories_id'],
-                         ':coupon'        => $coupon['coupon'],
-                         ':seocoupon'     => $coupon['seocoupon'],
+                         ':code'          => $coupon['code'],
+                         ':seocode'       => $coupon['seocode'],
                          ':reward'        => $coupon['reward'],
+                         ':count'         => $coupon['count'],
+                         ':expired'       => $coupon['expired'],
                          ':description'   => $coupon['description']));
 
         $coupon['id'] = sql_insert_id();
@@ -219,14 +221,16 @@ function coupons_insert($coupon){
  */
 function coupons_update($coupon){
     try{
+        load_libs('meta');
+
         $coupon = coupons_validate($coupon);
-        meta_action($coupon['meta_id'], 'update');
+        meta_action(meta_action(), 'update');
 
         sql_query('UPDATE `coupons`
 
                    SET    `categories_id` = :categories_id,
-                          `coupon`        = :coupon,
-                          `seocoupon`     = :seocoupon,
+                          `code`          = :code,
+                          `seocode`       = :seocode,
                           `reward`        = :reward,
                           `description`   = :description
 
@@ -234,12 +238,11 @@ function coupons_update($coupon){
 
                    array(':id'            =>  $coupon['id'],
                          ':categories_id' => $coupon['categories_id'],
-                         ':coupon'        => $coupon['coupon'],
-                         ':seocoupon'     => $coupon['seocoupon'],
+                         ':code'          => $coupon['code'],
+                         ':seocode'       => $coupon['seocode'],
                          ':reward'        => $coupon['reward'],
                          ':description'   => $coupon['description']));
 
-        coupons_update_domains($coupon['id'], $coupon['domains']);
         return $coupon;
 
     }catch(Exception $e){
@@ -316,15 +319,13 @@ function coupons_get($coupon, $column = null, $status = null, $categories_id = f
                                          `coupons`.`code`,
                                          `coupons`.`seocode`,
                                          `coupons`.`reward`,
-                                         `coupons`.`description`,
+                                         `coupons`.`description`
 
-                                         `parents`.`name`    AS `parent`,
-                                         `parents`.`seoname` AS `seoparent`
+                               FROM      `coupons`'.$where, $execute);
+        }
 
-                               FROM      `coupons`
-
-                               LEFT JOIN `coupons` AS `parents`
-                               ON        `parents`.`id` = `coupons`.`parents_id` '.$where, $execute);
+        if(!$retval){
+            return array('status' => '_new');
         }
 
         return $retval;
@@ -332,5 +333,118 @@ function coupons_get($coupon, $column = null, $status = null, $categories_id = f
     }catch(Exception $e){
         throw new bException('coupons_get(): Failed', $e);
     }
+}
+
+/*
+ * Validate the coupon code
+ *
+ */
+function coupons_validate_code(string $code){
+    global $_CONFIG;
+
+    try{
+        load_libs('validate');
+
+        if(preg_match('/[a-z0-9-]{2,16}/i',$code)){
+            $coupon = sql_get('SELECT `coupons`.`id`,
+                                      `coupons`.`categories_id`,
+                                      `coupons`.`code`,
+                                      `coupons`.`seocode`,
+                                      `coupons`.`reward`
+
+                               FROM   `coupons`
+
+                               WHERE   `seocode` = :code', array(':code' => $code));
+            if($coupon){
+                /*
+                * Check if the user not use this code before
+                */
+                $query = sql_get('SELECT `id` FROM `coupons_used` WHERE `createdby` = :createdby', array(':createdby' => $_SESSION['user']['id']));
+
+                if($query){
+                    return array('status'  => 'error',
+                                 'message' => tr('you only can use this coupon one time ":coupon"', array(':coupon' => $code)));
+                }
+
+                /*
+                 * Check if the coupon is not expired
+                 */
+                $query = sql_get('SELECT `id`
+
+                                  FROM `coupons`
+
+                                  WHERE (`expired` = "0000-00-00 00:00:00" OR `expired` >= curdate())
+                                  AND    `id` = :id', array(':id' => $coupon['id']));
+
+                if(!$query){
+                    return array('status'  => 'error',
+                                 'message' => tr('The coupon ":coupon" is expired', array(':coupon' => $code)));
+                }
+
+                /*
+                 * Check if the coupon enabled
+                 */
+                $query = sql_get('SELECT `id`
+
+                                  FROM `coupons`
+
+                                  WHERE (`count` IS NULL OR `count` > :count OR `count` = 0)
+                                  AND    `id` = :id', array(':id' => $coupon['id'], ':count' => sql_get('SELECT COUNT(*) as `id`
+
+                                                                                                         FROM  `coupons_used`
+
+                                                                                                         WHERE `coupons_id` = :coupons_used', array(':coupons_used' => $coupon['id']))['id']));
+               if($query){
+                   return array_merge($coupon, array('status'  => 'success',
+                                                     'message' => tr('This coupon was added to your listing')));
+               }else{
+                   return array('status'  => 'error',
+                                'message' => tr('this coupon ":coupon" has reached the maximum number of uses', array(':coupon' => $code)));
+               }
+
+            }else{
+                return array('status'  => 'error',
+                             'message' => tr('invalid coupon ":coupon"', array(':coupon' => $code)));
+            }
+        }else{
+            return array('status'  => 'error',
+                         'message' => tr('invalid coupon ":coupon"', array(':coupon' => $code)));
+        }
+
+    }catch(Exception $e){
+        throw new bException('coupons_validate(): Failed', $e);
+    }
+}
+
+
+
+/*
+ * Use a coupon
+ *
+ */
+function coupons_use(string $code){
+    $validate = coupons_validate_code($code);
+
+    try{
+        if($validate['status'] == 'error'){
+            throw new Exception($validate['message']);
+        }else{
+            $coupon = sql_get('SELECT `id`,
+                                      `reward`
+
+                               FROM   `coupons`
+
+                               WHERE `seocode` = :seocode', array(':seocode' => $code));
+
+            sql_query('INSERT INTO `coupons_used` (`createdby`, `coupons_id`, `meta_id`)
+                       VALUES (:createdby, :coupons_id, :meta_id);', array(':createdby'  => $_SESSION['user']['id'],
+                                                                           ':coupons_id' => $coupon['id'],
+                                                                           ':meta_id'    => meta_action()));
+            return $coupon;
+        }
+    }catch(Exception $e){
+        // throw new bException('coupons_use(): Failed', $e);
+    }
+
 }
 ?>

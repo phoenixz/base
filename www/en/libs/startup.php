@@ -4591,7 +4591,7 @@ function shutdown(){
  */
 function log_database($messages, $class = 'syslog'){
     try{
-        return log_file($messages, $class);
+        return str_force(log_file($messages, $class));
 
     }catch(Exception $e){
         throw new bException('log_database(): Failed', $e);
