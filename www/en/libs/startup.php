@@ -143,15 +143,15 @@ $core->startup();
  * @package startup
  */
 class core{
-    public $sql          = array();
-    public $mc           = array();
-    public $register     = array('js'            => array(),
-                                 'css'           => array(),
-                                 'quiet'         => true,
-                                 'footer'        => '',
-                                 'debug_queries' => array());
+    private $callType = null;
 
-    private $callType    = null;
+    public $sql       = array();
+    public $mc        = array();
+    public $register  = array('js'            => array(),
+                              'css'           => array(),
+                              'quiet'         => true,
+                              'footer'        => '',
+                              'debug_queries' => array());
 
     function __construct(){
         global $_CONFIG;
