@@ -46,11 +46,11 @@ function composer_library_init(){
 function composer_init_file(){
     try{
         load_libs('file');
-        
+
         file_execute_mode(ROOT, 0770, function(){
             file_put_contents(ROOT.'composer.json', "{\n}");
         });
-        
+
     }catch(Exception $e){
         throw new bException('composer_init_file(): Failed', $e);
     }

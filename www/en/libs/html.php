@@ -2193,14 +2193,14 @@ function html_minify($html, $full = false){
  * link between the two under "group"
  */
  function html_translate($name){
- 	static $translations = array();
+    static $translations = array();
 
      try{
- 		if(!isset($translations[$name])){
- 			$translations[$name] = '__HT'.$name.'__'.substr(unique_code('sha256'), 0, 16);
- 		}
+        if(!isset($translations[$name])){
+            $translations[$name] = '__HT'.$name.'__'.substr(unique_code('sha256'), 0, 16);
+        }
 
- 		return $translations[$name];
+        return $translations[$name];
 
      }catch(Exception $e){
          throw new bException(tr('html_translate(): Failed'), $e);
