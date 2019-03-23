@@ -9,10 +9,10 @@
  * @copyright Sven Oostenbrink <support@capmega.com>, Johan Geuze
  */
 $_CONFIG['update']                              = array('local'     => array('host' => 'localhost',
-                                                                             'path' => '/var/www/html/base',
+                                                                             'path' => '/var/www/html/phoundation',
                                                                              'port' => 22),
 
                                                         'remote'    => array('host' => '',
-                                                                             'path' => '/var/www/html/base',
+                                                                             'path' => '/var/www/html/phoundation',
                                                                              'port' => 22));
 ?>
